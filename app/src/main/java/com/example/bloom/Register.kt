@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,36 +33,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bloom.ui.theme.BloomTheme
 
-class MainActivity : ComponentActivity() {
+class RegisterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             BloomTheme {
-                LoginView()
+                RegisterView()
             }
         }
     }
 }
 
 @Composable
-fun LoginView(modifier: Modifier = Modifier) {
+fun RegisterView(modifier: Modifier = Modifier){
     val context = LocalContext.current
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var createEmail by remember { mutableStateOf("") }
+    var createPassword by remember { mutableStateOf("") }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         modifier = Modifier.fillMaxHeight().padding(12.dp)
     ) {
+
+        //Logo
         Image(
             painter = painterResource(R.drawable.bloom_icon),
             contentDescription = "Bloom Logo",
             modifier = Modifier.size(84.dp)
         )
 
-        //Header and Welcome message
+        //Header, and create account message
         Text(
             text = "Bloom",
             modifier = modifier
@@ -73,47 +76,50 @@ fun LoginView(modifier: Modifier = Modifier) {
         )
 
         Text(
-            text = "Welcome, Login!",
+            text = "Create an Account",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
 
 
-        //email
+
+        //create email
         TextFields(
-            labelText = "Enter your email",
-            textInput = email,
-            onValueChange = { email = it},
+            labelText = "Create email",
+            textInput = createEmail,
+            onValueChange = { createEmail = it},
             modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
         )
 
-        //password
+        //create password
         TextFields(
-            labelText = "Enter your password",
-            textInput = password,
-            onValueChange = { password = it },
+            labelText = "Create password",
+            textInput = createPassword,
+            onValueChange = { createPassword = it },
             modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
         )
 
+
+        //Register Button
         Button(
             onClick = {
-                onHandleSignIn(email, password) {
+                onHandleRegister(createEmail, createPassword) {
                     val intent = Intent(context, DashboardActivity::class.java)
                     context.startActivity(intent)
                 }
             },
             modifier = modifier.fillMaxWidth()
         ) {
-            Text("Login")
+            Text("Register")
         }
 
-        //Switch to register button
-        SwitchToRegisterButton()
 
+        SwitchToLoginButton()
     }
+
 }
 
-private fun onHandleSignIn(email: String, password: String, onSuccess: () -> Unit){
+private fun onHandleRegister(email: String, password: String, onSuccess: ()-> Unit){
     if(!email.isEmpty() && !password.isEmpty()){
         print("Success")
         onSuccess()
@@ -143,29 +149,31 @@ private fun TextFields(
     )
 }
 
+
 @Composable
-private fun SwitchToRegisterButton() {
+private fun SwitchToLoginButton() {
     val context = LocalContext.current
 
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Don't have an account?")
+        Text("Already registered?")
         TextButton(
             onClick = {
-                val intent = Intent(context, RegisterActivity::class.java)
-                context.startActivity((intent))
+                val intent = Intent(context, MainActivity::class.java)
+                context.startActivity(intent)
             }
         ) {
-            Text("Create one")
+            Text("Login")
         }
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
-fun LoginPreview() {
+fun RegisterPreview() {
     BloomTheme {
-        LoginView()
+        RegisterView()
     }
 }
