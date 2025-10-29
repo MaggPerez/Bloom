@@ -7,14 +7,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 
 class LoginRegisterViewModel: ViewModel() {
-    var email by mutableStateOf("")
-    var password by mutableStateOf("")
+    var loginEmail by mutableStateOf("")
+    var loginPassword by mutableStateOf("")
     val loginController = LoginRegisterController()
     val openAlertDialog = mutableStateOf(false)
     var status by  mutableStateOf<Any>("")
 
     fun login(): Boolean {
-        status = loginController.onHandleLogin(email, password)
+        status = loginController.onHandleLogin(loginEmail, loginPassword)
 
         //if there is an error message, an Alert Dialog will show up
         if(status is String){

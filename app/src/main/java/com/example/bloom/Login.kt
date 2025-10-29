@@ -86,16 +86,16 @@ fun LoginView(
         //email
         TextFields(
             labelText = "Enter your email",
-            textInput = loginRegisterViewModel.email,
-            onValueChange = { loginRegisterViewModel.email = it},
+            textInput = loginRegisterViewModel.loginEmail,
+            onValueChange = { loginRegisterViewModel.loginEmail = it},
             modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
         )
 
         //password
         TextFields(
             labelText = "Enter your password",
-            textInput = loginRegisterViewModel.password,
-            onValueChange = { loginRegisterViewModel.password = it },
+            textInput = loginRegisterViewModel.loginPassword,
+            onValueChange = { loginRegisterViewModel.loginPassword = it },
             modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
         )
 
