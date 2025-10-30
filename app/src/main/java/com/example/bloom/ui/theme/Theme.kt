@@ -12,9 +12,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = BlueAccent,
+    onPrimary = SlateWhite,
+    primaryContainer = BlueAccentDark,
+    onPrimaryContainer = Slate300,
+
+    secondary = Slate600,
+    onSecondary = SlateWhite,
+    secondaryContainer = Slate700,
+    onSecondaryContainer = Slate300,
+
+    tertiary = BlueAccentLight,
+    onTertiary = SlateDark,
+
+    background = SlateDark,
+    onBackground = SlateWhite,
+
+    surface = Slate800,
+    onSurface = SlateWhite,
+    surfaceVariant = Slate700,
+    onSurfaceVariant = Slate400,
+
+    outline = Slate600,
+    outlineVariant = Slate700,
+
+    error = ErrorRed,
+    onError = SlateWhite
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -35,9 +58,9 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun BloomTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true, // Default to dark theme for financial app
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Disabled to maintain consistent brand colors
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

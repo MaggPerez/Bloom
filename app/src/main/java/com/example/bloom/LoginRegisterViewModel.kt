@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModel
 class LoginRegisterViewModel: ViewModel() {
     var loginEmail by mutableStateOf("")
     var loginPassword by mutableStateOf("")
+    var passwordVisible by mutableStateOf(false)
+    var rememberMe by mutableStateOf(false)
     val loginController = LoginRegisterController()
     val openAlertDialog = mutableStateOf(false)
     var status by  mutableStateOf<Any>("")
@@ -25,5 +27,9 @@ class LoginRegisterViewModel: ViewModel() {
             return true
         }
 
+    }
+
+    fun togglePasswordVisibility() {
+        passwordVisible = !passwordVisible
     }
 }
