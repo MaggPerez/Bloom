@@ -26,3 +26,11 @@ local.properties
 /.idea/runConfigurations/
 
 .env
+local.properties
+
+# Kotlin compiler error logs
+.kotlin/
+*.log
+
+# Gradle daemon log
+.gradle/daemon/

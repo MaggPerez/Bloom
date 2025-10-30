@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    kotlin("plugin.serialization") version "2.0.21"
+    kotlin("plugin.serialization") version "2.2.21"
 }
 
 android {
@@ -21,8 +21,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         //set value part for supabase
-        Properties properties = new Properties()
-        properties.load(project.rootProject.file("local.properties").newDataInputStream())
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${properties.getProperty("SUPABASE_PUBLISHABLE_KEY")}\"")
         buildConfigField("String", "SECRET", "\"${properties.getProperty("SECRET")}\"")
         buildConfigField("String", "SUPABASE_URL", "\"${properties.getProperty("SUPABASE_URL")}\"")
@@ -46,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -71,11 +72,22 @@ dependencies {
 
 
     //supabase
-    implementation(platform("io.github.jan-tennert.supabase:bom:3.3.1"))
-    implementation("io.github.jan-tennert.supabase:postgrest-kt")
-    implementation("io.github.jan-tennert.supabase:auth-kt")
-    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.2.5"))
+    implementation("io.github.jan-tennert.supabase:postgrest-kt:3.2.6")
+    implementation("io.github.jan-tennert.supabase:auth-kt:3.2.6")
+    implementation("io.github.jan-tennert.supabase:realtime-kt:3.2.6")
 
-    implementation("io.ktor:ktor-client-okhttp:3.3.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    //ktor
+    implementation("io.ktor:ktor-client-android:3.3.1")
+//    implementation("io.ktor:ktor-client-core:3.3.1")
+//    implementation("io.ktor:ktor-utils:3.3.1")
+
+
+//    implementation("io.ktor:ktor-client-okhttp:3.3.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+
+    //hilt
+//    implementation ("com.google.dagger:hilt-android:2.57.2")
+//    annotationProcessor ("com.google.dagger:hilt-compiler:2.57.2")
+//    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
 }
