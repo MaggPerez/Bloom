@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,9 +16,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,80 +48,89 @@ fun RegisterScreen(
     var createEmail by remember { mutableStateOf("") }
     var createPassword by remember { mutableStateOf("") }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-        modifier = Modifier.fillMaxHeight().padding(12.dp)
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-
-        //Logo
-        Image(
-            painter = painterResource(R.drawable.bloom_icon),
-            contentDescription = "Bloom Logo",
-            modifier = Modifier.size(84.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+            modifier = Modifier
+                .fillMaxHeight()
+//                .background(MaterialTheme.colorScheme.background)
+                .padding(12.dp)
         )
+        {
 
-        //Header, and create account message
-        Text(
-            text = "Bloom",
-            modifier = modifier
-        )
-        Text(
-            text = "Helping people with their finances",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Light
-        )
+            //Logo
+            Image(
+                painter = painterResource(R.drawable.bloom_icon),
+                contentDescription = "Bloom Logo",
+                modifier = Modifier.size(84.dp)
+            )
 
-        Text(
-            text = "Create an Account",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
+            //Header, and create account message
+            Text(
+                text = "Bloom",
+                modifier = modifier
+            )
+            Text(
+                text = "Helping people with their finances",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Light
+            )
 
-
-
-        //create email
-        TextFields(
-            labelText = "Create email",
-            textInput = createEmail,
-            onValueChange = { createEmail = it},
-            modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
-        )
-
-        //create password
-        TextFields(
-            labelText = "Create password",
-            textInput = createPassword,
-            onValueChange = { createPassword = it },
-            modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
-        )
+            Text(
+                text = "Create an Account",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
 
 
-        //Register Button
-        Button(
-            onClick = {
+
+            //create email
+            TextFields(
+                labelText = "Create email",
+                textInput = createEmail,
+                onValueChange = { createEmail = it},
+                modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
+            )
+
+            //create password
+            TextFields(
+                labelText = "Create password",
+                textInput = createPassword,
+                onValueChange = { createPassword = it },
+                modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
+            )
+
+
+            //Register Button
+            Button(
+                onClick = {
 //                if(onHandleRegister(createEmail, createPassword)){
 //                    //navigate to dashboard
 //                    navController.navigate("dashboard_screen")
 //                }
-            },
-            modifier = modifier.fillMaxWidth()
-        ) {
-            Text("Register")
-        }
-
-
-        //Navigate to Login Screen
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Already have an account?")
-            TextButton(
-                onClick = {
-                    navController.navigate("login_screen")
-                }
+                },
+                modifier = modifier.fillMaxWidth()
             ) {
-                Text("Login")
+                Text("Register")
+            }
+
+
+            //Navigate to Login Screen
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Already have an account?")
+                TextButton(
+                    onClick = {
+                        navController.navigate("login_screen")
+                    }
+                ) {
+                    Text("Login")
+                }
             }
         }
     }
@@ -146,7 +158,7 @@ private fun TextFields(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    TextField(
+    OutlinedTextField(
         value = textInput,
         onValueChange = onValueChange,
         label = { Text(labelText) },

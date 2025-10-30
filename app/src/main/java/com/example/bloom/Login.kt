@@ -2,6 +2,7 @@ package com.example.bloom
 
 import android.content.Intent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,9 +15,11 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,77 +61,85 @@ fun LoginScreen(
         }
     }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-        modifier = Modifier.fillMaxHeight().padding(12.dp)
+    Surface(
+        modifier = Modifier.fillMaxHeight(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Image(
-            painter = painterResource(R.drawable.bloom_icon),
-            contentDescription = "Bloom Logo",
-            modifier = Modifier.size(84.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(12.dp)
         )
+        {
+            Image(
+                painter = painterResource(R.drawable.bloom_icon),
+                contentDescription = "Bloom Logo",
+                modifier = Modifier.size(84.dp)
+            )
 
-        //Header and Welcome message
-        Text(
-            text = "Bloom",
-            modifier = modifier
-        )
-        Text(
-            text = "Helping people with their finances",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Light
-        )
+            //Header and Welcome message
+            Text(
+                text = "Bloom",
+                modifier = modifier
+            )
+            Text(
+                text = "Helping people with their finances",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Light
+            )
 
-        Text(
-            text = "Welcome, Login!",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
+            Text(
+                text = "Welcome, Login!",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
 
 
-        //email
-        TextFields(
-            labelText = "Enter your email",
-            textInput = loginRegisterViewModel.loginEmail,
-            onValueChange = { loginRegisterViewModel.loginEmail = it},
-            modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
-        )
+            //email
+            TextFields(
+                labelText = "Enter your email",
+                textInput = loginRegisterViewModel.loginEmail,
+                onValueChange = { loginRegisterViewModel.loginEmail = it},
+                modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
+            )
 
-        //password
-        TextFields(
-            labelText = "Enter your password",
-            textInput = loginRegisterViewModel.loginPassword,
-            onValueChange = { loginRegisterViewModel.loginPassword = it },
-            modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
-        )
+            //password
+            TextFields(
+                labelText = "Enter your password",
+                textInput = loginRegisterViewModel.loginPassword,
+                onValueChange = { loginRegisterViewModel.loginPassword = it },
+                modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
+            )
 
-        Button(
-            onClick = {
-                if(loginRegisterViewModel.login()){
-                    navController.navigate("dashboard_screen")
-                }
-
-            },
-            modifier = modifier.fillMaxWidth()
-        ) {
-            Text("Login")
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Don't have an account?")
-            TextButton(
+            Button(
                 onClick = {
-                    navController.navigate("register_screen")
-                }
+                    if(loginRegisterViewModel.login()){
+                        navController.navigate("dashboard_screen")
+                    }
+
+                },
+                modifier = modifier.fillMaxWidth()
             ) {
-                Text("Create one")
+                Text("Login")
             }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Don't have an account?")
+                TextButton(
+                    onClick = {
+                        navController.navigate("register_screen")
+                    }
+                ) {
+                    Text("Create one")
+                }
+            }
+
+
         }
-
-
     }
 }
 
@@ -182,7 +193,7 @@ private fun TextFields(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    TextField(
+    OutlinedTextField(
         value = textInput,
         onValueChange = onValueChange,
         label = { Text(labelText) },
