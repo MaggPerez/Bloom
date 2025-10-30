@@ -6,88 +6,88 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-// shadcn-inspired dark color scheme
+// shadcn/ui official dark color scheme (using OKLCH-based colors)
 private val DarkColorScheme = darkColorScheme(
-    primary = White,
-    onPrimary = Black,
-    primaryContainer = Gray800,
-    onPrimaryContainer = Gray50,
+    primary = ShadcnDarkFg,
+    onPrimary = ShadcnDarkCard,
+    primaryContainer = ShadcnDarkMuted,
+    onPrimaryContainer = ShadcnDarkFg,
 
-    secondary = Gray400,
-    onSecondary = Black,
-    secondaryContainer = Gray800,
-    onSecondaryContainer = Gray100,
+    secondary = ShadcnDarkMutedFg,
+    onSecondary = ShadcnDarkBg,
+    secondaryContainer = ShadcnDarkMuted,
+    onSecondaryContainer = ShadcnDarkFg,
 
-    tertiary = Gray300,
-    onTertiary = Black,
-    tertiaryContainer = Gray700,
-    onTertiaryContainer = Gray100,
+    tertiary = Gray400,
+    onTertiary = ShadcnDarkBg,
+    tertiaryContainer = ShadcnDarkCard,
+    onTertiaryContainer = ShadcnDarkFg,
 
-    background = Black,
-    onBackground = White,
+    background = ShadcnDarkBg,              // #252525 - softer than pure black
+    onBackground = ShadcnDarkFg,            // #FAFAFA - softer than pure white
 
-    surface = Gray950,
-    onSurface = White,
-    surfaceVariant = Gray900,
-    onSurfaceVariant = Gray300,
+    surface = ShadcnDarkCard,               // #353535 - elevated surfaces
+    onSurface = ShadcnDarkFg,
+    surfaceVariant = ShadcnDarkMuted,       // #454545 - muted surfaces
+    onSurfaceVariant = ShadcnDarkMutedFg,
 
-    surfaceTint = Gray400,
+    surfaceTint = Gray500,
 
-    error = Gray300,
-    onError = Black,
-    errorContainer = Gray800,
-    onErrorContainer = Gray100,
+    error = Gray400,
+    onError = ShadcnDarkBg,
+    errorContainer = Gray700,
+    onErrorContainer = Gray200,
 
-    outline = Gray800,
-    outlineVariant = Gray900,
+    outline = ShadcnDarkBorder,             // #3A3A3A - subtle borders
+    outlineVariant = ShadcnDarkMuted,
 
-    scrim = Black,
+    scrim = ShadcnDarkBg,
 
-    inverseSurface = White,
-    inverseOnSurface = Black,
-    inversePrimary = Gray900
+    inverseSurface = ShadcnLightBg,
+    inverseOnSurface = ShadcnLightFg,
+    inversePrimary = Gray700
 )
 
-// shadcn-inspired light color scheme
+// shadcn/ui official light color scheme
 private val LightColorScheme = lightColorScheme(
-    primary = Black,
-    onPrimary = White,
-    primaryContainer = Gray100,
-    onPrimaryContainer = Gray900,
+    primary = ShadcnLightFg,
+    onPrimary = ShadcnLightBg,
+    primaryContainer = ShadcnLightMuted,
+    onPrimaryContainer = ShadcnLightFg,
 
     secondary = Gray600,
-    onSecondary = White,
-    secondaryContainer = Gray100,
-    onSecondaryContainer = Gray900,
+    onSecondary = ShadcnLightBg,
+    secondaryContainer = ShadcnLightMuted,
+    onSecondaryContainer = ShadcnLightFg,
 
     tertiary = Gray700,
-    onTertiary = White,
+    onTertiary = ShadcnLightBg,
     tertiaryContainer = Gray200,
-    onTertiaryContainer = Gray900,
+    onTertiaryContainer = ShadcnLightFg,
 
-    background = White,
-    onBackground = Black,
+    background = ShadcnLightBg,             // #FFFFFF - pure white
+    onBackground = ShadcnLightFg,           // #0A0A0A - near-black text
 
-    surface = Gray50,
-    onSurface = Black,
-    surfaceVariant = Gray100,
-    onSurfaceVariant = Gray700,
+    surface = ShadcnLightCard,              // #FAFAFA - slightly off-white
+    onSurface = ShadcnLightFg,
+    surfaceVariant = ShadcnLightMuted,      // #F4F4F5 - muted surfaces
+    onSurfaceVariant = ShadcnLightMutedFg,
 
     surfaceTint = Gray600,
 
     error = Gray700,
-    onError = White,
+    onError = ShadcnLightBg,
     errorContainer = Gray100,
     onErrorContainer = Gray900,
 
-    outline = Gray200,
-    outlineVariant = Gray100,
+    outline = ShadcnLightBorder,            // #E4E4E7 - light borders
+    outlineVariant = ShadcnLightMuted,
 
-    scrim = Black,
+    scrim = ShadcnLightFg,
 
-    inverseSurface = Black,
-    inverseOnSurface = White,
-    inversePrimary = Gray100
+    inverseSurface = ShadcnDarkBg,
+    inverseOnSurface = ShadcnDarkFg,
+    inversePrimary = Gray300
 )
 
 @Composable
