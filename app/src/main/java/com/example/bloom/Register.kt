@@ -15,7 +15,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -28,25 +32,37 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bloom.ui.theme.BloomTheme
+import com.example.bloom.viewmodel.LoginRegisterViewModel
 
 
 @Composable
 fun RegisterScreen(
     navController: NavController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    loginRegisterViewModel: LoginRegisterViewModel = viewModel()
 ){
-    val context = LocalContext.current
-    var createEmail by remember { mutableStateOf("") }
-    var createPassword by remember { mutableStateOf("") }
+
+    when {
+        loginRegisterViewModel.openAlertDialog.value -> {
+            AlertDialogPopUp(
+                onDismissRequest = { loginRegisterViewModel.openAlertDialog.value = false },
+                dialogTitle = "Error Registering",
+                dialogText = loginRegisterViewModel.status as String,
+                icon = Icons.Default.Info
+            )
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -57,7 +73,6 @@ fun RegisterScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
             modifier = Modifier
                 .fillMaxHeight()
-//                .background(MaterialTheme.colorScheme.background)
                 .padding(12.dp)
         )
         {
@@ -91,16 +106,16 @@ fun RegisterScreen(
             //create email
             TextFields(
                 labelText = "Create email",
-                textInput = createEmail,
-                onValueChange = { createEmail = it},
+                textInput = loginRegisterViewModel.createEmail,
+                onValueChange = { loginRegisterViewModel.createEmail = it},
                 modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
             )
 
             //create password
             TextFields(
                 labelText = "Create password",
-                textInput = createPassword,
-                onValueChange = { createPassword = it },
+                textInput = loginRegisterViewModel.createPassword,
+                onValueChange = { loginRegisterViewModel.createPassword = it },
                 modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
             )
 
@@ -108,10 +123,10 @@ fun RegisterScreen(
             //Register Button
             Button(
                 onClick = {
-//                if(onHandleRegister(createEmail, createPassword)){
-//                    //navigate to dashboard
-//                    navController.navigate("dashboard_screen")
-//                }
+                if(loginRegisterViewModel.register()){
+                    //navigate to dashboard
+                    navController.navigate("dashboard_screen")
+                }
                 },
                 modifier = modifier.fillMaxWidth()
             ) {
@@ -137,16 +152,45 @@ fun RegisterScreen(
 
 }
 
-private fun onHandleRegister(email: String, password: String, onSuccess: ()-> Unit){
-    if(!email.isEmpty() && !password.isEmpty()){
-        print("Success")
-        onSuccess()
-    }
-    else{
-        print("error")
-    }
-}
 
+
+/**
+ * Alert Dialog
+ */
+@Composable
+private fun AlertDialogPopUp(
+    onDismissRequest: () -> Unit,
+    dialogTitle: String,
+    dialogText: String,
+    icon: ImageVector,
+) {
+    AlertDialog(
+        icon = {
+            Icon(icon, contentDescription = "Example Icon")
+        },
+        title = {
+            Text(text = dialogTitle)
+        },
+        text = {
+            Text(text = dialogText)
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                }
+            ) {
+                Text("Dismiss")
+            }
+        }
+    )
+}
 
 /**
  * TextField composable for email and password

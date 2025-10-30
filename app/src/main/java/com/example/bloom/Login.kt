@@ -46,8 +46,6 @@ fun LoginScreen(
     modifier: Modifier = Modifier,
     loginRegisterViewModel: LoginRegisterViewModel = viewModel()
 ) {
-    val context = LocalContext.current
-
 
     //Alert Dialog if there was an error signing in
     when {
@@ -148,7 +146,7 @@ fun LoginScreen(
  * Alert Dialog
  */
 @Composable
-fun AlertDialogPopUp(
+private fun AlertDialogPopUp(
     onDismissRequest: () -> Unit,
     dialogTitle: String,
     dialogText: String,

@@ -7,6 +7,11 @@ import androidx.lifecycle.ViewModel
 import com.example.bloom.LoginRegisterController
 
 class LoginRegisterViewModel: ViewModel() {
+    //register variables
+    var createEmail by mutableStateOf("")
+    var createPassword by mutableStateOf("")
+
+    //login variables
     var loginEmail by mutableStateOf("")
     var loginPassword by mutableStateOf("")
     val loginController = LoginRegisterController()
@@ -25,5 +30,18 @@ class LoginRegisterViewModel: ViewModel() {
             return true
         }
 
+    }
+
+    fun register(): Boolean {
+        status = loginController.onHandleRegister(createEmail, createPassword)
+
+        //if there is an error message, an Alert Dialog will show up
+        if(status is String){
+            openAlertDialog.value = true
+            return false
+        }
+        else{
+            return true
+        }
     }
 }
