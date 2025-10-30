@@ -32,10 +32,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.bloom.ui.theme.BloomTheme
+import com.example.bloom.viewmodel.LoginRegisterViewModel
 
 @Composable
-fun LoginView(
+fun LoginScreen(
+    navController: NavController,
     modifier: Modifier = Modifier,
     loginRegisterViewModel: LoginRegisterViewModel = viewModel()
 ) {
@@ -102,8 +106,7 @@ fun LoginView(
         Button(
             onClick = {
                 if(loginRegisterViewModel.login()){
-                    val intent = Intent(context, DashboardActivity::class.java)
-                    context.startActivity(intent)
+                    navController.navigate("dashboard_screen")
                 }
 
             },
@@ -111,8 +114,20 @@ fun LoginView(
         ) {
             Text("Login")
         }
-        //Switch to register button
-        SwitchToRegisterButton()
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Don't have an account?")
+            TextButton(
+                onClick = {
+                    navController.navigate("register_screen")
+                }
+            ) {
+                Text("Create one")
+            }
+        }
+
 
     }
 }
@@ -176,29 +191,12 @@ private fun TextFields(
     )
 }
 
-@Composable
-private fun SwitchToRegisterButton() {
-    val context = LocalContext.current
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("Don't have an account?")
-        TextButton(
-            onClick = {
-                val intent = Intent(context, RegisterActivity::class.java)
-                context.startActivity((intent))
-            }
-        ) {
-            Text("Create one")
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
 fun LoginPreview() {
     BloomTheme {
-        LoginView()
+        LoginScreen(navController = rememberNavController())
     }
 }

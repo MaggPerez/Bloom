@@ -1,17 +1,17 @@
-package com.example.bloom
+package com.example.bloom.viewmodel
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
+import com.example.bloom.LoginRegisterController
 
 class LoginRegisterViewModel: ViewModel() {
     var loginEmail by mutableStateOf("")
     var loginPassword by mutableStateOf("")
     val loginController = LoginRegisterController()
     val openAlertDialog = mutableStateOf(false)
-    var status by  mutableStateOf<Any>("")
+    var status by mutableStateOf<Any>("")
 
     fun login(): Boolean {
         status = loginController.onHandleLogin(loginEmail, loginPassword)

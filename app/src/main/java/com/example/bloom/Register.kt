@@ -31,22 +31,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.bloom.ui.theme.BloomTheme
 
-class RegisterActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            BloomTheme {
-                RegisterView()
-            }
-        }
-    }
-}
 
 @Composable
-fun RegisterView(modifier: Modifier = Modifier){
+fun RegisterScreen(
+    navController: NavController,
+    modifier: Modifier = Modifier
+){
     val context = LocalContext.current
     var createEmail by remember { mutableStateOf("") }
     var createPassword by remember { mutableStateOf("") }
@@ -103,10 +97,10 @@ fun RegisterView(modifier: Modifier = Modifier){
         //Register Button
         Button(
             onClick = {
-                onHandleRegister(createEmail, createPassword) {
-                    val intent = Intent(context, DashboardActivity::class.java)
-                    context.startActivity(intent)
-                }
+//                if(onHandleRegister(createEmail, createPassword)){
+//                    //navigate to dashboard
+//                    navController.navigate("dashboard_screen")
+//                }
             },
             modifier = modifier.fillMaxWidth()
         ) {
@@ -114,7 +108,19 @@ fun RegisterView(modifier: Modifier = Modifier){
         }
 
 
-        SwitchToLoginButton()
+        //Navigate to Login Screen
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Already have an account?")
+            TextButton(
+                onClick = {
+                    navController.navigate("login_screen")
+                }
+            ) {
+                Text("Login")
+            }
+        }
     }
 
 }
@@ -150,30 +156,13 @@ private fun TextFields(
 }
 
 
-@Composable
-private fun SwitchToLoginButton() {
-    val context = LocalContext.current
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("Already registered?")
-        TextButton(
-            onClick = {
-                val intent = Intent(context, MainActivity::class.java)
-                context.startActivity(intent)
-            }
-        ) {
-            Text("Login")
-        }
-    }
-}
 
 
 @Preview(showBackground = true)
 @Composable
 fun RegisterPreview() {
     BloomTheme {
-        RegisterView()
+        RegisterScreen(navController = rememberNavController())
     }
 }

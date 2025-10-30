@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             BloomTheme {
-                LoginView()
+                Navigation()
             }
         }
     }
