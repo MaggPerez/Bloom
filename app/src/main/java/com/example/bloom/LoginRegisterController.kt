@@ -1,7 +1,10 @@
 package com.example.bloom
 
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
+
 class LoginRegisterController() {
-    fun onHandleLogin(email: String, password: String): Any {
+    suspend fun onHandleLogin(email: String, password: String): Any {
         if(email.isEmpty() && password.isEmpty()){
             return "Email and Password Fields are Empty"
         }
@@ -11,11 +14,23 @@ class LoginRegisterController() {
 
         if(password.isEmpty()) { return "Password Field is Empty" }
 
-        return true
+        //logging in user with Supabase Auth
+        return try {
+            val supabase = SupabaseClient.client
+
+            supabase.auth.signInWith(Email) {
+                this.email = email
+                this.password = password
+            }
+
+            true
+        } catch (e: Exception) {
+            "Invalid login, try again"
+        }
 
     }
 
-    fun onHandleRegister(email: String, password: String): Any {
+    suspend fun onHandleRegister(email: String, password: String): Any {
         if(email.isEmpty() && password.isEmpty()){
             return "Email and Password Fields are Empty"
         }
@@ -25,7 +40,20 @@ class LoginRegisterController() {
 
         if(password.isEmpty()) { return "Password Field is Empty" }
 
-        return true
+
+        //registering user with Supabase Auth
+        return try {
+            val supabase = SupabaseClient.client
+
+            supabase.auth.signUpWith(Email) {
+                this.email = email
+                this.password = password
+            }
+
+            true
+        } catch (e: Exception) {
+            "Registration failed: ${e.message}"
+        }
 
     }
 }

@@ -29,7 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -52,6 +54,7 @@ fun RegisterScreen(
     modifier: Modifier = Modifier,
     loginRegisterViewModel: LoginRegisterViewModel = viewModel()
 ){
+    val coroutineScope = rememberCoroutineScope()
 
     when {
         loginRegisterViewModel.openAlertDialog.value -> {
@@ -123,10 +126,12 @@ fun RegisterScreen(
             //Register Button
             Button(
                 onClick = {
-                if(loginRegisterViewModel.register()){
-                    //navigate to dashboard
-                    navController.navigate("dashboard_screen")
-                }
+                    coroutineScope.launch {
+                        if(loginRegisterViewModel.register()){
+                            //navigate to dashboard
+                            navController.navigate("dashboard_screen")
+                        }
+                    }
                 },
                 modifier = modifier.fillMaxWidth()
             ) {

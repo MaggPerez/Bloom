@@ -39,6 +39,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bloom.ui.theme.BloomTheme
 import com.example.bloom.viewmodel.LoginRegisterViewModel
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -46,6 +48,8 @@ fun LoginScreen(
     modifier: Modifier = Modifier,
     loginRegisterViewModel: LoginRegisterViewModel = viewModel()
 ) {
+
+    val coroutineScope = rememberCoroutineScope()
 
     //Alert Dialog if there was an error signing in
     when {
@@ -113,8 +117,11 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    if(loginRegisterViewModel.login()){
-                        navController.navigate("dashboard_screen")
+                    coroutineScope.launch {
+                        if(loginRegisterViewModel.login()) {
+                            //navigate to dashboard screen if login is successful
+                            navController.navigate("dashboard_screen")
+                        }
                     }
 
                 },

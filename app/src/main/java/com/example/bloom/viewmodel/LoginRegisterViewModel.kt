@@ -18,7 +18,7 @@ class LoginRegisterViewModel: ViewModel() {
     val openAlertDialog = mutableStateOf(false)
     var status by mutableStateOf<Any>("")
 
-    fun login(): Boolean {
+    suspend fun login(): Boolean {
         status = loginController.onHandleLogin(loginEmail, loginPassword)
 
         //if there is an error message, an Alert Dialog will show up
@@ -32,7 +32,7 @@ class LoginRegisterViewModel: ViewModel() {
 
     }
 
-    fun register(): Boolean {
+    suspend fun register(): Boolean {
         status = loginController.onHandleRegister(createEmail, createPassword)
 
         //if there is an error message, an Alert Dialog will show up
