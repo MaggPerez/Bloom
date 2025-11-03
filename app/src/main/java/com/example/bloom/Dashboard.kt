@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -19,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +34,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 
@@ -52,6 +55,7 @@ fun DashboardScreen(
 ) {
 
     val email = user?.email
+    val coroutineScope = rememberCoroutineScope()
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -62,6 +66,19 @@ fun DashboardScreen(
         ) {
             Text("Hello $email")
             InstrumentsList()
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        navController.navigate("main_screen") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                        supabase.auth.signOut()
+                    }
+                }
+            ) {
+                Text(text = "Sign Out")
+            }
         }
     }
 }
