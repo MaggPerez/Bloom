@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bloom.ui.theme.BloomTheme
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
@@ -35,13 +36,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 
 
-val supabase = createSupabaseClient(
-
-    supabaseUrl = com.example.bloom.BuildConfig.SUPABASE_URL,
-    supabaseKey = com.example.bloom.BuildConfig.SUPABASE_PUBLISHABLE_KEY
-) {
-    install(Postgrest)
-}
+val supabase = SupabaseClient.client
+val user = supabase.auth.currentUserOrNull()
 @Serializable
 data class Instrument(
     val id: Int,
@@ -54,6 +50,8 @@ fun DashboardScreen(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+
+    val email = user?.email
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -62,7 +60,7 @@ fun DashboardScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("Hello")
+            Text("Hello $email")
             InstrumentsList()
         }
     }
@@ -89,6 +87,7 @@ fun InstrumentsList() {
         }
     }
 }
+
 
 
 @Preview(showBackground = true)
