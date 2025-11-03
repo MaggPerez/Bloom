@@ -119,8 +119,10 @@ fun LoginScreen(
                 onClick = {
                     coroutineScope.launch {
                         if(loginRegisterViewModel.login()) {
-                            //navigate to dashboard screen if login is successful
-                            navController.navigate("dashboard_screen")
+                            //navigate to dashboard screen if login is successful and clear back stack
+                            navController.navigate("dashboard_screen") {
+                                popUpTo("main_screen") { inclusive = true }
+                            }
                         }
                     }
 

@@ -128,8 +128,10 @@ fun RegisterScreen(
                 onClick = {
                     coroutineScope.launch {
                         if(loginRegisterViewModel.register()){
-                            //navigate to dashboard
-                            navController.navigate("dashboard_screen")
+                            //navigate to dashboard and clear back stack
+                            navController.navigate("dashboard_screen") {
+                                popUpTo("main_screen") { inclusive = true }
+                            }
                         }
                     }
                 },
