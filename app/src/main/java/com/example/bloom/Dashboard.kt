@@ -4,14 +4,31 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,10 +41,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.bloom.datamodels.FinancialDataModels
 import com.example.bloom.ui.theme.BloomTheme
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
@@ -37,10 +58,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import java.util.Locale
+import java.time.LocalDate
+import java.time.format.TextStyle
 
 
-val supabase = SupabaseClient.client
-val user = supabase.auth.currentUserOrNull()
+//val supabase = SupabaseClient.client
+//val user = supabase.auth.currentUserOrNull()
 @Serializable
 data class Instrument(
     val id: Int,
@@ -49,23 +73,136 @@ data class Instrument(
 
 
 @Composable
+fun MetricCard(
+    title: String,
+    value: String,
+    subtitle: String? = null,
+    icon: ImageVector,
+    backgroundColor: Color,
+    iconTint: Color,
+    modifier: Modifier = Modifier,
+    progressPercentage: Float? = null
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            //Icon and title row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+
+                Box(
+                    modifier = Modifier.size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(backgroundColor.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = title,
+                        tint = iconTint,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            //value
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            //subtitle or progress
+            if(progressPercentage != null){
+                Spacer(modifier = Modifier.height(8.dp))
+                //todo come back later to add some type of linear progress bar
+            }
+
+            if(subtitle != null){
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun DashboardScreen(
     navController: NavController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
 
-    val email = user?.email
+//    val email = user?.email
+    // Get current month and year
+    val currentDate = remember { LocalDate.now() }
+    val monthName = currentDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
+    val year = currentDate.year
+
+    // Define colors for metrics
+    val greenColor = Color(0xFF10B981)
+    val redColor = Color(0xFFEF4444)
+    val blueColor = Color(0xFF3B82F6)
+    val yellowColor = Color(0xFFFBBF24)
+
+    val budgetSummary = remember {
+        FinancialDataModels.BudgetSummary(
+            monthlyBudget = 1200.0,
+            totalSpent = 847.50,
+            savingsGoal = 500.0,
+            currentSavings = 325.0
+        )
+    }
     val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
+
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxWidth().verticalScroll(scrollState).padding(16.dp)
         ) {
-            Text("Hello $email")
-            InstrumentsList()
+//            Text("Hello $email")
+//            InstrumentsList()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                MetricCard(
+                    title = "Monthly Budget",
+                    value = "$${String.format(Locale.US, "%.0f", budgetSummary.monthlyBudget)}",
+                    subtitle = "Total allocated",
+                    icon = Icons.Default.Settings,
+                    backgroundColor = blueColor,
+                    iconTint = blueColor,
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
             Button(
                 onClick = {
@@ -73,7 +210,7 @@ fun DashboardScreen(
                         navController.navigate("main_screen") {
                             popUpTo(0) { inclusive = true }
                         }
-                        supabase.auth.signOut()
+//                        supabase.auth.signOut()
                     }
                 }
             ) {
@@ -83,27 +220,27 @@ fun DashboardScreen(
     }
 }
 
-@Composable
-fun InstrumentsList() {
-    var instruments by remember { mutableStateOf<List<Instrument>>(listOf()) }
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            instruments = supabase.from("instruments")
-                .select().decodeList<Instrument>()
-        }
-    }
-    LazyColumn {
-        items(
-            instruments,
-            key = { instrument -> instrument.id },
-        ) { instrument ->
-            Text(
-                instrument.name,
-                modifier = Modifier.padding(8.dp),
-            )
-        }
-    }
-}
+//@Composable
+//fun InstrumentsList() {
+//    var instruments by remember { mutableStateOf<List<Instrument>>(listOf()) }
+//    LaunchedEffect(Unit) {
+//        withContext(Dispatchers.IO) {
+//            instruments = supabase.from("instruments")
+//                .select().decodeList<Instrument>()
+//        }
+//    }
+//    LazyColumn {
+//        items(
+//            instruments,
+//            key = { instrument -> instrument.id },
+//        ) { instrument ->
+//            Text(
+//                instrument.name,
+//                modifier = Modifier.padding(8.dp),
+//            )
+//        }
+//    }
+//}
 
 
 
