@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +43,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -203,6 +208,10 @@ fun SpendingPieChart(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 //todo add pie chart
+                PieChart(
+                    categories = categories,
+                    modifier = Modifier.size(160.dp)
+                )
 
 
                 Column(
@@ -215,6 +224,50 @@ fun SpendingPieChart(
                 }
             }
         }
+    }
+}
+
+
+
+@Composable
+fun PieChart(
+    categories: List<FinancialDataModels.CategorySpending>,
+    modifier: Modifier = Modifier
+) {
+    val total = categories.sumOf { it.amount }
+
+    Canvas(modifier = modifier) {
+        val canvasSize = size.minDimension
+        val radius = canvasSize / 2f
+        val strokeWidth = radius * 0.4f
+
+        var startAngle = -90f
+
+        categories.forEach { category ->
+            val sweepAngle = if (total > 0) ((category.amount / total) * 360).toFloat() else 0f
+
+            drawArc(
+                color = category.color,
+                startAngle = startAngle,
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                topLeft = Offset(
+                    (size.width - canvasSize) / 2,
+                    (size.height - canvasSize) / 2
+                ),
+                size = Size(canvasSize, canvasSize),
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+
+            startAngle += sweepAngle
+        }
+
+        //center circle for donut effect
+        drawCircle(
+            color = Color.Transparent,
+            radius = radius - strokeWidth,
+            center = center
+        )
     }
 }
 
