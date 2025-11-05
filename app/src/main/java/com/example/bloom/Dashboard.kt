@@ -148,6 +148,32 @@ fun MetricCard(
     }
 }
 
+
+@Composable
+fun LinearProgressBar(
+    percentage: Float,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.fillMaxWidth()
+            .height(8.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(fraction = (percentage / 100f).coerceIn(0f, 1f))
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(color)
+        )
+    }
+}
+
+
+
+
 @Composable
 fun DashboardScreen(
     navController: NavController,
