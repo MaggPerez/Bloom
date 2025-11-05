@@ -133,7 +133,7 @@ fun MetricCard(
             //subtitle or progress
             if(progressPercentage != null){
                 Spacer(modifier = Modifier.height(8.dp))
-                //todo come back later to add some type of linear progress bar
+                LinearProgressBar(percentage = progressPercentage, color = iconTint)
             }
 
             if(subtitle != null){
@@ -171,6 +171,27 @@ fun LinearProgressBar(
     }
 }
 
+
+
+@Composable
+fun SpendingPieChart(
+    categories: List<FinancialDataModels.CategorySpending>,
+    totalSpent: Double,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+
+        }
+    }
+}
 
 
 
