@@ -188,7 +188,32 @@ fun SpendingPieChart(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            Text(
+                text = "Spending Breakdown",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                //todo add pie chart
+
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    categories.forEach { category ->
+                        val percentage = if(totalSpent > 0) (category.amount / totalSpent * 100).toInt() else 0
+                        //todo add legend item
+                    }
+                }
+            }
         }
     }
 }
