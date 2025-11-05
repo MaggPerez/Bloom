@@ -25,7 +25,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -70,6 +77,7 @@ import kotlinx.serialization.Serializable
 import java.util.Locale
 import java.time.LocalDate
 import java.time.format.TextStyle
+import kotlin.collections.listOf
 
 
 //val supabase = SupabaseClient.client
@@ -220,11 +228,11 @@ fun SpendingPieChart(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    categories.forEach { category ->
-                        val percentage = if(totalSpent > 0) (category.amount / totalSpent * 100).toInt() else 0
+                    categories.forEach { (category, amount, color, icon) ->
+                        val percentage = if (totalSpent > 0) (amount / totalSpent * 100).toInt() else 0
                         LegendItem(
-                            color = category.color,
-                            label = category.category,
+                            color = color,
+                            label = category,
                             percentage = percentage
                         )
                     }
@@ -293,19 +301,19 @@ fun LegendItem(
     ) {
         Box(
             modifier = Modifier.size(12.dp).clip(CircleShape).background(color)
-        ) {
-            Column{
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "$percentage%",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-            }
+        )
+
+        Column{
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "$percentage%",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
         }
     }
 }
@@ -372,6 +380,16 @@ fun DashboardScreen(
         )
     }
 
+    val categorySpending = remember {
+        listOf(
+            FinancialDataModels.CategorySpending("Food", 285.0, Color(0xFF4CAF50), Icons.Default.Add),
+            FinancialDataModels.CategorySpending("Transport", 120.0, Color(0xFF2196F3), Icons.Default.Add),
+            FinancialDataModels.CategorySpending("Education", 200.0, Color(0xFFFFC107), Icons.Default.Add),
+            FinancialDataModels.CategorySpending("Entertainment", 142.50, Color(0xFFFF5722), Icons.Default.Add),
+            FinancialDataModels.CategorySpending("Bills", 100.0, Color(0xFF9C27B0), Icons.Default.Add)
+        )
+    }
+
 
 
     // Get current month and year
@@ -400,10 +418,71 @@ fun DashboardScreen(
 //            Text("Hello $email")
 //            InstrumentsList()
 
+            //header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Welcome back",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    )
+
+                    //placeholder user
+                    Text(
+                        text = "User",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            navController.navigate("main_screen") {
+                                popUpTo(0) { inclusive = true }
+                            }
+
+                            //todo supabase signout
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = "Sign Out",
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text("Sign Out")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "$monthName $year",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+
+
+            // 2x2 Metric Card Layout
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+
+                //monthly budget and Spent
                 MetricCard(
                     title = "Monthly Budget",
                     value = "$${String.format(Locale.US, "%.0f", budgetSummary.monthlyBudget)}",
@@ -413,7 +492,123 @@ fun DashboardScreen(
                     iconTint = blueColor,
                     modifier = Modifier.weight(1f)
                 )
+
+                MetricCard(
+                    title = "Spent",
+                    value = "$${String.format(Locale.US, "%.2f", budgetSummary.totalSpent)}",
+                    subtitle = "${String.format(Locale.US, "%.1f", budgetSummary.spentPercentage)}% of budget",
+                    icon = Icons.Default.ShoppingCart,
+                    backgroundColor = redColor,
+                    iconTint = redColor,
+                    modifier = Modifier.weight(1f)
+                )
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                MetricCard(
+                    title = "Remaining",
+                    value = "$${String.format(Locale.US, "%.2f", budgetSummary.remaining)}",
+                    subtitle = "Can still spend",
+                    icon = Icons.Default.CheckCircle,
+                    backgroundColor = greenColor,
+                    iconTint = greenColor,
+                    modifier = Modifier.weight(1f),
+                    progressPercentage = budgetSummary.remainingPercentage
+                )
+
+                MetricCard(
+                    title = "Savings Goal",
+                    value = "$${String.format(Locale.US, "%.0f", budgetSummary.currentSavings)}",
+                    subtitle = "of $${String.format(Locale.US, "%.0f", budgetSummary.savingsGoal)}",
+                    icon = Icons.Default.Star,
+                    backgroundColor = yellowColor,
+                    iconTint = yellowColor,
+                    modifier = Modifier.weight(1f),
+                    progressPercentage = budgetSummary.savingsPercentage
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+
+            //spending pie chart breakdown
+            SpendingPieChart(
+                categories = categorySpending,
+                totalSpent = budgetSummary.totalSpent
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+
+            //quick action section
+            Text(
+                text = "Quick Actions",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                QuickActionButton(
+                    label = "Add Transaction",
+                    icon = Icons.Default.Add,
+                    backgroundColor = blueColor,
+                    iconTint = blueColor,
+                    onClick = { /* TODO: Navigate to add transaction */ },
+                    modifier = Modifier.weight(1f)
+                )
+
+                QuickActionButton(
+                    label = "View Categories",
+                    icon = Icons.Default.Home,
+                    backgroundColor = yellowColor,
+                    iconTint = yellowColor,
+                    onClick = { /* TODO: Navigate to categories */ },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                QuickActionButton(
+                    label = "Set Budget",
+                    icon = Icons.Default.Settings,
+                    backgroundColor = greenColor,
+                    iconTint = greenColor,
+                    onClick = { /* TODO: Navigate to budget settings */ },
+                    modifier = Modifier.weight(1f)
+                )
+
+                QuickActionButton(
+                    label = "View Reports",
+                    icon = Icons.Default.AccountCircle,
+                    backgroundColor = redColor,
+                    iconTint = redColor,
+                    onClick = { /* TODO: Navigate to reports */ },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+
 
             Button(
                 onClick = {
