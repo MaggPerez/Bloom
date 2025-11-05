@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -26,10 +27,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -309,13 +312,68 @@ fun LegendItem(
 
 
 
+
+@Composable
+fun QuickActionButton(
+    label: String,
+    icon: ImageVector,
+    backgroundColor: Color,
+    iconTint: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth().height(56.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = backgroundColor.copy(alpha = 0.1f),
+            contentColor = iconTint
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
 @Composable
 fun DashboardScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
 ) {
 
-//    val email = user?.email
+    //    val email = user?.email
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
+    val budgetSummary = remember {
+        FinancialDataModels.BudgetSummary(
+            monthlyBudget = 1200.0,
+            totalSpent = 847.50,
+            savingsGoal = 500.0,
+            currentSavings = 325.0
+        )
+    }
+
+
+
     // Get current month and year
     val currentDate = remember { LocalDate.now() }
     val monthName = currentDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
@@ -327,16 +385,8 @@ fun DashboardScreen(
     val blueColor = Color(0xFF3B82F6)
     val yellowColor = Color(0xFFFBBF24)
 
-    val budgetSummary = remember {
-        FinancialDataModels.BudgetSummary(
-            monthlyBudget = 1200.0,
-            totalSpent = 847.50,
-            savingsGoal = 500.0,
-            currentSavings = 325.0
-        )
-    }
-    val coroutineScope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
+
+
 
 
 
