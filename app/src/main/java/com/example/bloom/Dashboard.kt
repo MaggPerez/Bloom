@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -207,7 +208,6 @@ fun SpendingPieChart(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                //todo add pie chart
                 PieChart(
                     categories = categories,
                     modifier = Modifier.size(160.dp)
@@ -219,7 +219,11 @@ fun SpendingPieChart(
                 ) {
                     categories.forEach { category ->
                         val percentage = if(totalSpent > 0) (category.amount / totalSpent * 100).toInt() else 0
-                        //todo add legend item
+                        LegendItem(
+                            color = category.color,
+                            label = category.category,
+                            percentage = percentage
+                        )
                     }
                 }
             }
@@ -268,6 +272,38 @@ fun PieChart(
             radius = radius - strokeWidth,
             center = center
         )
+    }
+}
+
+
+@Composable
+fun LegendItem(
+    color: Color,
+    label: String,
+    percentage: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier.size(12.dp).clip(CircleShape).background(color)
+        ) {
+            Column{
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "$percentage%",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
     }
 }
 
