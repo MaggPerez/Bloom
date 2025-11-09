@@ -29,8 +29,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -42,6 +44,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Scaffold
@@ -66,9 +69,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.bloom.datamodels.FinancialDataModels
 import com.example.bloom.ui.theme.BloomTheme
+import com.example.bloom.viewmodel.DashboardViewModel
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
@@ -81,6 +86,8 @@ import java.util.Locale
 import java.time.LocalDate
 import java.time.format.TextStyle
 import kotlin.collections.listOf
+import androidx.compose.material3.NavigationBarItem
+import com.example.bloom.datamodels.BottomNavItemDataModel
 
 
 //val supabase = SupabaseClient.client
@@ -364,11 +371,61 @@ fun QuickActionButton(
     }
 }
 
+
+
+@Composable
+fun BottomNavigationBar(
+    navController: NavController,
+    currentRoute: String?,
+    modifier: Modifier = Modifier
+) {
+
+    //getting nav items from data model
+    val items = BottomNavItemDataModel.nav_items
+
+    NavigationBar(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp
+    ) {
+        items.forEach { item ->
+            NavigationBarItem(
+                icon = {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.label
+                    )
+                },
+                label = { Text(item.label) },
+                selected = currentRoute == item.route,
+                onClick = {
+                    navController.navigate(item.route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+
+    }
+}
+
+
+
+
+
 @Composable
 fun DashboardScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
 ) {
+
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
 
     //    val email = user?.email
     val coroutineScope = rememberCoroutineScope()
@@ -406,231 +463,240 @@ fun DashboardScreen(
     val blueColor = Color(0xFF3B82F6)
     val yellowColor = Color(0xFFFBBF24)
 
-
-
-
-
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .verticalScroll(scrollState)
-                .padding(16.dp)
-        ) {
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(
+                navController = navController,
+                currentRoute = currentRoute
+            )
+        }
+    ) { paddingValues ->
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        )
+        {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .verticalScroll(scrollState)
+                    .padding(16.dp)
+            ) {
 //            Text("Hello $email")
 //            InstrumentsList()
 
-            //header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
+                    //header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Welcome back",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                            )
+
+                            //placeholder user
+                            Text(
+                                text = "User",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    navController.navigate("main_screen") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+
+                                    //todo supabase signout
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = "Sign Out",
+                                modifier = Modifier.size(20.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(4.dp))
+
+                            Text("Sign Out")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Text(
-                        text = "Welcome back",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        text = "$monthName $year",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                     )
 
-                    //placeholder user
+                    Spacer(modifier = Modifier.height(24.dp))
+
+
+
+                    // 2x2 Metric Card Layout
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+
+                        //monthly budget and Spent
+                        MetricCard(
+                            title = "Monthly Budget",
+                            value = "$${String.format(Locale.US, "%.0f", budgetSummary.monthlyBudget)}",
+                            subtitle = "Total allocated",
+                            icon = Icons.Default.Settings,
+                            backgroundColor = blueColor,
+                            iconTint = blueColor,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        MetricCard(
+                            title = "Spent",
+                            value = "$${String.format(Locale.US, "%.2f", budgetSummary.totalSpent)}",
+                            subtitle = "${String.format(Locale.US, "%.1f", budgetSummary.spentPercentage)}% of budget",
+                            icon = Icons.Default.ShoppingCart,
+                            backgroundColor = redColor,
+                            iconTint = redColor,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        MetricCard(
+                            title = "Remaining",
+                            value = "$${String.format(Locale.US, "%.2f", budgetSummary.remaining)}",
+                            subtitle = "Can still spend",
+                            icon = Icons.Default.CheckCircle,
+                            backgroundColor = greenColor,
+                            iconTint = greenColor,
+                            modifier = Modifier.weight(1f),
+                            progressPercentage = budgetSummary.remainingPercentage
+                        )
+
+                        MetricCard(
+                            title = "Savings Goal",
+                            value = "$${String.format(Locale.US, "%.0f", budgetSummary.currentSavings)}",
+                            subtitle = "of $${String.format(Locale.US, "%.0f", budgetSummary.savingsGoal)}",
+                            icon = Icons.Default.Star,
+                            backgroundColor = yellowColor,
+                            iconTint = yellowColor,
+                            modifier = Modifier.weight(1f),
+                            progressPercentage = budgetSummary.savingsPercentage
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+
+                    //spending pie chart breakdown
+                    SpendingPieChart(
+                        categories = categorySpending,
+                        totalSpent = budgetSummary.totalSpent
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+
+                    //quick action section
                     Text(
-                        text = "User",
-                        style = MaterialTheme.typography.headlineMedium,
+                        text = "Quick Actions",
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
-                }
 
-                OutlinedButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            navController.navigate("main_screen") {
-                                popUpTo(0) { inclusive = true }
-                            }
-
-                            //todo supabase signout
-                        }
-                    },
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = "Sign Out",
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text("Sign Out")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "$monthName $year",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
 
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        QuickActionButton(
+                            label = "Add Transaction",
+                            icon = Icons.Default.Add,
+                            backgroundColor = blueColor,
+                            iconTint = blueColor,
+                            onClick = { /* TODO: Navigate to add transaction */ },
+                            modifier = Modifier.weight(1f)
+                        )
 
-            // 2x2 Metric Card Layout
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-
-                //monthly budget and Spent
-                MetricCard(
-                    title = "Monthly Budget",
-                    value = "$${String.format(Locale.US, "%.0f", budgetSummary.monthlyBudget)}",
-                    subtitle = "Total allocated",
-                    icon = Icons.Default.Settings,
-                    backgroundColor = blueColor,
-                    iconTint = blueColor,
-                    modifier = Modifier.weight(1f)
-                )
-
-                MetricCard(
-                    title = "Spent",
-                    value = "$${String.format(Locale.US, "%.2f", budgetSummary.totalSpent)}",
-                    subtitle = "${String.format(Locale.US, "%.1f", budgetSummary.spentPercentage)}% of budget",
-                    icon = Icons.Default.ShoppingCart,
-                    backgroundColor = redColor,
-                    iconTint = redColor,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                MetricCard(
-                    title = "Remaining",
-                    value = "$${String.format(Locale.US, "%.2f", budgetSummary.remaining)}",
-                    subtitle = "Can still spend",
-                    icon = Icons.Default.CheckCircle,
-                    backgroundColor = greenColor,
-                    iconTint = greenColor,
-                    modifier = Modifier.weight(1f),
-                    progressPercentage = budgetSummary.remainingPercentage
-                )
-
-                MetricCard(
-                    title = "Savings Goal",
-                    value = "$${String.format(Locale.US, "%.0f", budgetSummary.currentSavings)}",
-                    subtitle = "of $${String.format(Locale.US, "%.0f", budgetSummary.savingsGoal)}",
-                    icon = Icons.Default.Star,
-                    backgroundColor = yellowColor,
-                    iconTint = yellowColor,
-                    modifier = Modifier.weight(1f),
-                    progressPercentage = budgetSummary.savingsPercentage
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-
-            //spending pie chart breakdown
-            SpendingPieChart(
-                categories = categorySpending,
-                totalSpent = budgetSummary.totalSpent
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-
-            //quick action section
-            Text(
-                text = "Quick Actions",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                QuickActionButton(
-                    label = "Add Transaction",
-                    icon = Icons.Default.Add,
-                    backgroundColor = blueColor,
-                    iconTint = blueColor,
-                    onClick = { /* TODO: Navigate to add transaction */ },
-                    modifier = Modifier.weight(1f)
-                )
-
-                QuickActionButton(
-                    label = "View Categories",
-                    icon = Icons.Default.Home,
-                    backgroundColor = yellowColor,
-                    iconTint = yellowColor,
-                    onClick = { /* TODO: Navigate to categories */ },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                QuickActionButton(
-                    label = "Set Budget",
-                    icon = Icons.Default.Settings,
-                    backgroundColor = greenColor,
-                    iconTint = greenColor,
-                    onClick = { /* TODO: Navigate to budget settings */ },
-                    modifier = Modifier.weight(1f)
-                )
-
-                QuickActionButton(
-                    label = "View Reports",
-                    icon = Icons.Default.AccountCircle,
-                    backgroundColor = redColor,
-                    iconTint = redColor,
-                    onClick = { /* TODO: Navigate to reports */ },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-
-
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        navController.navigate("main_screen") {
-                            popUpTo(0) { inclusive = true }
-                        }
-//                        supabase.auth.signOut()
+                        QuickActionButton(
+                            label = "View Categories",
+                            icon = Icons.Default.Home,
+                            backgroundColor = yellowColor,
+                            iconTint = yellowColor,
+                            onClick = { /* TODO: Navigate to categories */ },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                }
-            ) {
-                Text(text = "Sign Out")
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        QuickActionButton(
+                            label = "Set Budget",
+                            icon = Icons.Default.Settings,
+                            backgroundColor = greenColor,
+                            iconTint = greenColor,
+                            onClick = { /* TODO: Navigate to budget settings */ },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        QuickActionButton(
+                            label = "View Reports",
+                            icon = Icons.Default.AccountCircle,
+                            backgroundColor = redColor,
+                            iconTint = redColor,
+                            onClick = { /* TODO: Navigate to reports */ },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+
+
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                navController.navigate("main_screen") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+//                        supabase.auth.signOut()
+                            }
+                        }
+                    ) {
+                        Text(text = "Sign Out")
+                    }
             }
         }
+
     }
+
+
 }
 
 //@Composable

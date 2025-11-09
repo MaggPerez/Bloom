@@ -36,10 +36,15 @@ fun Navigation() {
         composable("register_screen") {
             RegisterScreen(navController)
         }
-        // Add other composable destinations here
         composable("dashboard_screen") {
             DashboardScreen(navController)
         }
+
+        composable("budget_screen") {
+            BudgetScreen(navController)
+        }
+
+
     }
 }
 
