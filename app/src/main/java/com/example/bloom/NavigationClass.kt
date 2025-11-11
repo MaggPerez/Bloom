@@ -26,7 +26,7 @@ import com.example.bloom.ui.theme.BloomTheme
 fun Navigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "main_screen") {
+    NavHost(navController = navController, startDestination = "dashboard_screen") {
         composable("main_screen") {
             MainScreen(navController)
         }

@@ -66,6 +66,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -399,10 +400,22 @@ fun BottomNavigationBar(
             items.forEach { item ->
                 NavigationBarItem(
                     icon = {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = item.label
-                        )
+                        when (item.icon) {
+                            is ImageVector -> {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.label,
+                                    tint = item.color,
+                                )
+                            }
+                            is Int -> {
+                                Icon(
+                                    painter = painterResource(id = item.icon),
+                                    contentDescription = item.label,
+                                    tint = item.color,
+                                )
+                            }
+                        }
                     },
                     label = { Text(item.label) },
                     selected = currentRoute == item.route,
