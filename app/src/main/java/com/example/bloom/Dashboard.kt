@@ -46,6 +46,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Scaffold
@@ -392,6 +393,7 @@ fun BottomNavigationBar(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(0.dp)
     ) {
+        //navigation bar
         NavigationBar(
             modifier = Modifier.fillMaxWidth(),
             containerColor = Color.Transparent,
@@ -405,14 +407,12 @@ fun BottomNavigationBar(
                                 Icon(
                                     imageVector = item.icon,
                                     contentDescription = item.label,
-                                    tint = item.color,
                                 )
                             }
                             is Int -> {
                                 Icon(
                                     painter = painterResource(id = item.icon),
                                     contentDescription = item.label,
-                                    tint = item.color,
                                 )
                             }
                         }
@@ -427,7 +427,15 @@ fun BottomNavigationBar(
                             launchSingleTop = true
                             restoreState = true
                         }
-                    }
+                    },
+                    //changing colors for navigation bar selected to match with the icon tint
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = item.color.copy(alpha = 0.15f),
+                        selectedIconColor = item.color,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        selectedTextColor = item.color,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
                 )
             }
 
