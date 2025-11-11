@@ -44,6 +44,10 @@ fun Navigation() {
             BudgetScreen(navController)
         }
 
+        composable("bloom_ai_screen") {
+            BloomAiScreen(navController)
+        }
+
 
     }
 }

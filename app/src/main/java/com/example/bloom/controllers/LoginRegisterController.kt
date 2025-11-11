@@ -1,5 +1,6 @@
-package com.example.bloom
+package com.example.bloom.controllers
 
+import com.example.bloom.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 

@@ -19,7 +19,7 @@ class BottomNavItemDataModel {
         val nav_items = listOf(
             BottomNavItem("dashboard_screen", "Dashboard", R.drawable.home_24px, Color(0xFF10B981)),
             BottomNavItem("budget_screen", "Budget", R.drawable.account_balance_wallet_24px, Color(0xFF3B82F6)),
-            BottomNavItem("ai_screen", "Bloom A.I", R.drawable.robot_2_24px, Color(0xFF8B5CF6))
+            BottomNavItem("bloom_ai_screen", "Bloom A.I", R.drawable.robot_2_24px, Color(0xFF8B5CF6))
         )
     }
 

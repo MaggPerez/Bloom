@@ -26,10 +26,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.bloom.ui.theme.BloomTheme
 
 @Composable
-fun BudgetScreen(
+fun BloomAiScreen(
     navController: NavController,
     modifier: Modifier = Modifier
-) {
+){
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val coroutineScope = rememberCoroutineScope()
@@ -55,7 +55,7 @@ fun BudgetScreen(
                     .verticalScroll(scrollState)
                     .padding(16.dp)
             ) {
-                Text(text = "Budget",
+                Text(text = "Bloom A.I",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -66,13 +66,10 @@ fun BudgetScreen(
 }
 
 
-
-
-
 @Preview (showBackground = true)
 @Composable
-fun BudgetScreenPreview() {
+fun BloomAiScreenPreview() {
     BloomTheme {
-        BudgetScreen(navController = rememberNavController())
+        BloomAiScreen(navController = rememberNavController())
     }
 }
