@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!--
+          Use 10.0.2.2 to address the localhost of the machine running the Android emulator.
+          If you are using a physical device, replace this with your computer's local IP address.
+        -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

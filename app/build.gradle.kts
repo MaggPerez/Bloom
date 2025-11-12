@@ -91,4 +91,19 @@ dependencies {
 //    implementation ("com.google.dagger:hilt-android:2.57.2")
 //    annotationProcessor ("com.google.dagger:hilt-compiler:2.57.2")
 //    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
+
+
+    //Retrofit dependencies
+
+    // Retrofit for networking
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+
+    // Gson converter for JSON serialization/deserialization
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // OkHttp (usually included with Retrofit, but good to have explicit)
+    // and its logging interceptor for debugging network requests
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
 }

@@ -9,13 +9,17 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -23,7 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.bloom.retrofitapi.RetrofitInstance
 import com.example.bloom.ui.theme.BloomTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun BloomAiScreen(
@@ -34,6 +41,8 @@ fun BloomAiScreen(
     val currentRoute = backStackEntry?.destination?.route
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+
+    var geminiResponseText by remember { mutableStateOf<Any>("Click to get gemini response") }
 
 
     Scaffold(
@@ -60,6 +69,25 @@ fun BloomAiScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
+
+                Text(text = "Gemini Text: $geminiResponseText")
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            try {
+                                geminiResponseText = "Loading..."
+                                val data = RetrofitInstance.instance.getGeminiResponse()
+                                geminiResponseText = data.message
+                            }
+                            catch (e: Exception) {
+                                geminiResponseText = "Error: ${e.message}"
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+                ) {
+                    Text(text = "Get Gemini Response")
+                }
             }
         }
     }

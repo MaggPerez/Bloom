@@ -12,6 +12,11 @@ class AIFeatureDataModel {
         val actionType: AIActionType,
     )
 
+    data class AIGenerativeDataModel(
+        val message: Any
+    )
+
+
     enum class AIActionType {
         NAVIGATE_TO_SCREEN,
         SHOW_BOTTOM_SHEET
