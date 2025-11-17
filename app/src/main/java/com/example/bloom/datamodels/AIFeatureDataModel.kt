@@ -56,35 +56,35 @@ class AIFeatureDataModel {
                 title = "Smart Insights",
                 description = "Discover patterns in your spending and get actionable recommendations",
                 icon = Icons.Default.Search,
-                color = aiBlue,
+                color = aiPurple,
                 actionType = AIFeatureDataModel.AIActionType.NAVIGATE_TO_SCREEN
             ),
             AIFeature(
                 title = "CSV Import",
                 description = "Upload your transactions and let AI create your budget automatically",
                 icon = Icons.Default.Add,
-                color = aiGreen,
+                color = aiPurple,
                 actionType = AIActionType.NAVIGATE_TO_SCREEN
             ),
             AIFeature(
                 title = "Health Score",
                 description = "See your overall financial wellness score and how to improve it",
                 icon = Icons.Default.FavoriteBorder,
-                color = aiPink,
+                color = aiPurple,
                 actionType = AIActionType.SHOW_BOTTOM_SHEET
             ),
             AIFeature(
                 title = "What-If Scenarios",
                 description = "Explore how different financial decisions impact your future",
                 icon = Icons.Default.Home,
-                color = aiOrange,
+                color = aiPurple,
                 actionType = AIActionType.NAVIGATE_TO_SCREEN
             ),
             AIFeature(
                 title = "Bill Predictions",
                 description = "AI detects recurring bills and alerts you before they're due",
                 icon = Icons.Default.DateRange,
-                color = aiYellow,
+                color = aiPurple,
                 actionType = AIActionType.SHOW_BOTTOM_SHEET
             )
         )
