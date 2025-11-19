@@ -12,9 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -40,6 +43,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.bloom.ui.theme.BloomTheme
 import com.example.bloom.viewmodel.LoginRegisterViewModel
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import kotlinx.coroutines.launch
 
 @Composable
@@ -104,7 +109,9 @@ fun LoginScreen(
                 labelText = "Enter your email",
                 textInput = loginRegisterViewModel.loginEmail,
                 onValueChange = { loginRegisterViewModel.loginEmail = it},
-                modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
+                modifier = modifier
+                    .padding(bottom = 8.dp)
+                    .fillMaxWidth()
             )
 
             //password
@@ -112,8 +119,15 @@ fun LoginScreen(
                 labelText = "Enter your password",
                 textInput = loginRegisterViewModel.loginPassword,
                 onValueChange = { loginRegisterViewModel.loginPassword = it },
-                modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
+                modifier = modifier
+                    .padding(bottom = 8.dp)
+                    .fillMaxWidth(),
+                passwordVisible = loginRegisterViewModel.passwordVisible,
+                onPasswordVisibilityChange = {
+                    loginRegisterViewModel.passwordVisible = !loginRegisterViewModel.passwordVisible
+                }
             )
+
 
             Button(
                 onClick = {
@@ -198,13 +212,37 @@ private fun TextFields(
     labelText: String,
     textInput: String,
     onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    passwordVisible: Boolean = false,
+    onPasswordVisibilityChange: (() -> Unit)? = null
 ) {
     OutlinedTextField(
         value = textInput,
         onValueChange = onValueChange,
         label = { Text(labelText) },
         singleLine = true,
+        //if password, show password icon and hide text
+        visualTransformation = if (labelText.contains("password", ignoreCase = true) && !passwordVisible) {
+            PasswordVisualTransformation()
+        } else {
+            VisualTransformation.None
+        },
+
+        //adding trailing icon for the password field
+        trailingIcon = {
+            if (labelText.contains("password", ignoreCase = true) && onPasswordVisibilityChange != null) {
+                val image = if (passwordVisible)
+                    Icons.Filled.Visibility
+                else
+                    Icons.Filled.VisibilityOff
+
+                val description = if (passwordVisible) "Hide password" else "Show password"
+
+                IconButton(onClick = onPasswordVisibilityChange) {
+                    Icon(imageVector = image, contentDescription = description)
+                }
+            }
+        },
         modifier = modifier
     )
 }

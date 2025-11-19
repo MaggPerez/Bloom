@@ -17,9 +17,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -38,6 +41,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -116,11 +121,18 @@ fun RegisterScreen(
 
             //create password
             TextFields(
-                labelText = "Create password",
+                labelText = "Enter your password",
                 textInput = loginRegisterViewModel.createPassword,
                 onValueChange = { loginRegisterViewModel.createPassword = it },
-                modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
+                modifier = modifier
+                    .padding(bottom = 8.dp)
+                    .fillMaxWidth(),
+                passwordVisible = loginRegisterViewModel.passwordVisible,
+                onPasswordVisibilityChange = {
+                    loginRegisterViewModel.passwordVisible = !loginRegisterViewModel.passwordVisible
+                }
             )
+
 
 
             //Register Button
@@ -207,13 +219,37 @@ private fun TextFields(
     labelText: String,
     textInput: String,
     onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    passwordVisible: Boolean = false,
+    onPasswordVisibilityChange: (() -> Unit)? = null
 ) {
     OutlinedTextField(
         value = textInput,
         onValueChange = onValueChange,
         label = { Text(labelText) },
         singleLine = true,
+        //if password, show password icon and hide text
+        visualTransformation = if (labelText.contains("password", ignoreCase = true) && !passwordVisible) {
+            PasswordVisualTransformation()
+        } else {
+            VisualTransformation.None
+        },
+
+        //adding trailing icon for the password field
+        trailingIcon = {
+            if (labelText.contains("password", ignoreCase = true) && onPasswordVisibilityChange != null) {
+                val image = if (passwordVisible)
+                    Icons.Filled.Visibility
+                else
+                    Icons.Filled.VisibilityOff
+
+                val description = if (passwordVisible) "Hide password" else "Show password"
+
+                IconButton(onClick = onPasswordVisibilityChange) {
+                    Icon(imageVector = image, contentDescription = description)
+                }
+            }
+        },
         modifier = modifier
     )
 }

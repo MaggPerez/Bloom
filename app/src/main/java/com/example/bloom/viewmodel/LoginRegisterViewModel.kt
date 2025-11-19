@@ -18,6 +18,9 @@ class LoginRegisterViewModel: ViewModel() {
     val openAlertDialog = mutableStateOf(false)
     var status by mutableStateOf<Any>("")
 
+
+    var passwordVisible by mutableStateOf(false)
+
     suspend fun login(): Boolean {
         status = loginController.onHandleLogin(loginEmail, loginPassword)
 
