@@ -404,7 +404,6 @@ fun CategoryBudgetCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                //todo continue working on category budget card
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier.size(12.dp)
@@ -441,65 +440,68 @@ fun CategoryBudgetCard(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            )
+            {
+                Column{
+                    Text(
+                        text = "Budget",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = "$${String.format(Locale.US, "%.2f", category.budgetAllocation)}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "Spent",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = "$${String.format(Locale.US, "%.2f", category.spent)}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (category.spent > category.budgetAllocation) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "Remaining",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = "$${String.format(Locale.US, "%.2f", category.remaining)}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (category.remaining < 0) Color(0xFFEF4444) else Color(0xFF10B981)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+
+            LinearProgressBar(
+                percentage = category.spentPercentage,
+                color = category.color
+            )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column{
-                Text(
-                    text = "Budget",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = "$${String.format(Locale.US, "%.2f", category.budgetAllocation)}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "Spent",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = "$${String.format(Locale.US, "%.2f", category.spent)}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (category.spent > category.budgetAllocation) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "Remaining",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = "$${String.format(Locale.US, "%.2f", category.remaining)}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (category.remaining < 0) Color(0xFFEF4444) else Color(0xFF10B981)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-
-        LinearProgressBar(
-            percentage = category.spentPercentage,
-            color = category.color
-        )
     }
 }
 
