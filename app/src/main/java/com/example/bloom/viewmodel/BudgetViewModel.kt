@@ -9,7 +9,7 @@ import com.example.bloom.controllers.BudgetController
 import com.example.bloom.datamodels.CategoryWithBudget
 import kotlinx.coroutines.launch
 
-class BudgetViewModel {
+class BudgetViewModel: ViewModel() {
 
     private val budgetController = BudgetController()
 
@@ -32,7 +32,7 @@ class BudgetViewModel {
 
 
     //loading and error states
-    var loading by mutableStateOf(false)
+    var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
 
@@ -183,6 +183,9 @@ class BudgetViewModel {
     }
 
 
+    /**
+     * function to load total spent for current month
+     */
     private suspend fun loadTotalSpent(){
         budgetController.getTotalSpentThisMonth().fold(
             onSuccess = { spent ->
@@ -201,6 +204,210 @@ class BudgetViewModel {
     //budget operations
     //*****************************************************
 
+    /**
+     * open edit budget dialog
+     */
+    fun openEditBudgetDialog() {
+        tempMonthlyBudget = monthlyBudget.toString()
+        tempSavingsGoal = savingsGoal.toString()
+        tempCurrentSavings = currentSavings.toString()
+        showEditBudgetDialog = true
+    }
+
+
+    /**
+     * save budget changes
+     */
+    fun saveBudget(){
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+
+            try {
+                val newMonthlyBudget = tempMonthlyBudget.toDoubleOrNull() ?: 0.0
+                val newSavingsGoal = tempSavingsGoal.toDoubleOrNull() ?: 0.0
+                val newCurrentSavings = tempCurrentSavings.toDoubleOrNull() ?: 0.0
+
+                budgetController.upsertBudgetSummary(
+                    monthlyBudget = newMonthlyBudget,
+                    savingsGoal = newSavingsGoal,
+                    currentSavings = newCurrentSavings
+                ).fold(
+                    onSuccess = {
+                        monthlyBudget = newMonthlyBudget
+                        savingsGoal = newSavingsGoal
+                        currentSavings = newCurrentSavings
+                        showEditBudgetDialog = false
+                    },
+                    onFailure = { e ->
+                        errorMessage = "Failed to save budget: ${e.message}"
+                    }
+                )
+            } catch (e: Exception){
+                errorMessage = "Invalid input: ${e.message}"
+            }
+            finally {
+                isLoading = false
+            }
+
+        }
+    }
+
+
+
+    //*****************************************************
+    //category operations
+    //*****************************************************
+
+    /**
+     * open add category dialog
+     */
+    fun openAddCategoryDialog() {
+        tempCategoryName = ""
+        tempCategoryColor = "#4CAF50"
+        tempCategoryIcon = "category"
+        tempCategoryBudget = ""
+        tempCategoryType = "expense"
+        selectedCategory = null
+        showAddCategoryDialog = true
+    }
+
+
+
+    /**
+     * open edit category dialog
+     */
+    fun openEditCategoryDialog(category: CategoryWithBudget) {
+        selectedCategory = category
+        tempCategoryName = category.name
+        tempCategoryColor = category.colorHex
+        tempCategoryIcon = category.iconName ?: "category"
+        tempCategoryBudget = category.budgetAllocation.toString()
+        tempCategoryType = category.categoryType
+        showEditCategoryDialog = true
+    }
+
+
+
+    /**
+     * open delete category confirmation dialog
+     */
+    fun openDeleteCategoryDialog(category: CategoryWithBudget) {
+        selectedCategory = category
+        showDeleteCategoryDialog = true
+    }
+
+
+    /**
+     * add new category
+     */
+    fun addCategory() {
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+
+            try {
+                val budgetAllocation = tempCategoryBudget.toDoubleOrNull() ?: 0.0
+
+                budgetController.createCategory(
+                    name = tempCategoryName,
+                    colorHex = tempCategoryColor,
+                    iconName = tempCategoryIcon,
+                    budgetAllocation = budgetAllocation,
+                    categoryType = tempCategoryType
+                ).fold(
+                    onSuccess = {
+                        showAddCategoryDialog = false
+                        loadCategories() // Reload categories
+                    },
+                    onFailure = { e ->
+                        errorMessage = "Failed to add category: ${e.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                errorMessage = "Invalid input: ${e.message}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+
+
+    /**
+     * update existing category
+     */
+    fun updateCategory() {
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+
+            try {
+                val category = selectedCategory ?: return@launch
+                val budgetAllocation = tempCategoryBudget.toDoubleOrNull() ?: 0.0
+
+                budgetController.updateCategory(
+                    categoryId = category.id,
+                    name = tempCategoryName,
+                    colorHex = tempCategoryColor,
+                    iconName = tempCategoryIcon,
+                    budgetAllocation = budgetAllocation,
+                    categoryType = tempCategoryType
+                ).fold(
+                    onSuccess = {
+                        showEditCategoryDialog = false
+                        loadCategories() // Reload categories
+                    },
+                    onFailure = { e ->
+                        errorMessage = "Failed to update category: ${e.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                errorMessage = "Invalid input: ${e.message}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+
+    /**
+     * delete category
+     */
+    fun deleteCategory() {
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+
+            try {
+                val category = selectedCategory ?: return@launch
+
+                budgetController.deleteCategory(category.id).fold(
+                    onSuccess = {
+                        showDeleteCategoryDialog = false
+                        selectedCategory = null
+                        loadCategories() // Reload categories
+                    },
+                    onFailure = { e ->
+                        errorMessage = "Failed to delete category: ${e.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                errorMessage = "Failed to delete category: ${e.message}"
+            }
+            finally {
+                isLoading = false
+            }
+        }
+    }
+
+
+    /**
+     * clearing error message
+     */
+    fun clearError(){
+        errorMessage = null
+    }
 
 
 
