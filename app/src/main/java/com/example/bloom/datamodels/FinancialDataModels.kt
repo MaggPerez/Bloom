@@ -77,3 +77,82 @@ data class CategoryWithBudget(
             .coerceIn(0f, 100f) else 0f
     val color: Color get() = Color(android.graphics.Color.parseColor(colorHex))
 }
+
+// Payment method enum
+enum class PaymentMethod {
+    CASH,
+    DEBIT_CARD,
+    CREDIT_CARD,
+    BANK_TRANSFER,
+    DIGITAL_WALLET,
+    OTHER;
+
+    fun displayName(): String = when (this) {
+        CASH -> "Cash"
+        DEBIT_CARD -> "Debit Card"
+        CREDIT_CARD -> "Credit Card"
+        BANK_TRANSFER -> "Bank Transfer"
+        DIGITAL_WALLET -> "Digital Wallet"
+        OTHER -> "Other"
+    }
+}
+
+// Serializable transaction data model for Supabase
+@Serializable
+data class TransactionData(
+    val id: String? = null,
+    val user_id: String,
+    val category_id: String,
+    val amount: Double,
+    val transaction_date: String, // DATE format: "yyyy-MM-dd"
+    val transaction_type: String, // "expense" or "income"
+    val description: String? = null,
+    val notes: String? = null,
+    val payment_method: String? = null, // PaymentMethod enum value as string
+    val location: String? = null,
+    val receipt_url: String? = null,
+    val tags: String? = null, // Stored as comma-separated string for compatibility
+    val is_recurring: Boolean? = false,
+    val recurring_frequency: String? = null, // "daily", "weekly", "monthly", "yearly"
+    val created_at: String? = null,
+    val updated_at: String? = null
+)
+
+// UI model combining transaction with category information
+data class TransactionWithCategory(
+    val id: String,
+    val userId: String,
+    val categoryId: String,
+    val categoryName: String,
+    val categoryColorHex: String,
+    val categoryIconName: String?,
+    val amount: Double,
+    val transactionDate: String,
+    val transactionType: String,
+    val description: String?,
+    val paymentMethod: PaymentMethod?,
+    val tags: List<String>,
+    val receiptUrl: String?
+) {
+    val categoryColor: Color get() = Color(android.graphics.Color.parseColor(categoryColorHex))
+    val tagsList: String get() = tags.joinToString(", ")
+    val isExpense: Boolean get() = transactionType == "expense"
+    val isIncome: Boolean get() = transactionType == "income"
+}
+
+// Filter state for transactions
+data class TransactionFilter(
+    val startDate: String? = null,
+    val endDate: String? = null,
+    val categoryIds: List<String> = emptyList(),
+    val transactionTypes: List<String> = emptyList(), // "expense", "income"
+    val minAmount: Double? = null,
+    val maxAmount: Double? = null,
+    val searchQuery: String? = null
+) {
+    fun isActive(): Boolean {
+        return startDate != null || endDate != null || categoryIds.isNotEmpty() ||
+                transactionTypes.isNotEmpty() || minAmount != null || maxAmount != null ||
+                !searchQuery.isNullOrBlank()
+    }
+}

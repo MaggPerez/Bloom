@@ -66,6 +66,10 @@ fun Navigation() {
             BloomAiScreen(navController)
         }
 
+        composable("transaction_screen"){
+            TransactionScreen(navController)
+        }
+
 
     }
 }
