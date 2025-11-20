@@ -653,7 +653,7 @@ fun DashboardScreen(
                             icon = Icons.Default.Add,
                             backgroundColor = blueColor,
                             iconTint = blueColor,
-                            onClick = { /* TODO: Navigate to add transaction */ },
+                            onClick = { navController.navigate("transaction_screen") },
                             modifier = Modifier.weight(1f)
                         )
 
