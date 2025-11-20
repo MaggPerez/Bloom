@@ -11,6 +11,10 @@ import com.example.bloom.datamodels.TransactionWithCategory
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.io.FileWriter
 import java.time.LocalDate
@@ -182,36 +186,42 @@ class TransactionController {
                     }
                 }
 
-            val transactions = response.decodeList<Map<String, Any>>()
+            val transactions = response.decodeList<JsonObject>()
 
             // Parse and map transactions
             val transactionsWithCategory = transactions.mapNotNull { txn ->
                 try {
-                    val category = txn["categories"] as? Map<*, *>
+                    val category = txn["categories"]?.jsonObject
 
                     // Handle tags - can be array or string depending on Supabase client
                     val tagsList = when (val tagsValue = txn["tags"]) {
-                        is List<*> -> tagsValue.mapNotNull { it as? String }
-                        is String -> tagsValue.split(",").filter { it.isNotBlank() }
-                        else -> emptyList()
+                        null -> emptyList()
+                        else -> {
+                            try {
+                                tagsValue.jsonArray.map { it.jsonPrimitive.content }
+                            } catch (e: Exception) {
+                                // If it's a string, split by comma
+                                tagsValue.jsonPrimitive.content.split(",").filter { it.isNotBlank() }
+                            }
+                        }
                     }
 
                     TransactionWithCategory(
-                        id = txn["id"] as String,
-                        userId = txn["user_id"] as String,
-                        categoryId = txn["category_id"] as String,
-                        categoryName = category?.get("name") as? String ?: "Unknown",
-                        categoryColorHex = category?.get("color_hex") as? String ?: "#808080",
-                        categoryIconName = category?.get("icon_name") as? String,
-                        amount = (txn["amount"] as? Number)?.toDouble() ?: 0.0,
-                        transactionDate = txn["transaction_date"] as String,
-                        transactionType = txn["transaction_type"] as String,
-                        description = txn["description"] as? String,
-                        paymentMethod = (txn["payment_method"] as? String)?.let {
+                        id = txn["id"]?.jsonPrimitive?.content ?: "",
+                        userId = txn["user_id"]?.jsonPrimitive?.content ?: "",
+                        categoryId = txn["category_id"]?.jsonPrimitive?.content ?: "",
+                        categoryName = category?.get("name")?.jsonPrimitive?.content ?: "Unknown",
+                        categoryColorHex = category?.get("color_hex")?.jsonPrimitive?.content ?: "#808080",
+                        categoryIconName = category?.get("icon_name")?.jsonPrimitive?.content,
+                        amount = txn["amount"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
+                        transactionDate = txn["transaction_date"]?.jsonPrimitive?.content ?: "",
+                        transactionType = txn["transaction_type"]?.jsonPrimitive?.content ?: "expense",
+                        description = txn["description"]?.jsonPrimitive?.content,
+                        paymentMethod = txn["payment_method"]?.jsonPrimitive?.content?.let {
                             try { PaymentMethod.valueOf(it) } catch (_: Exception) { null }
                         },
                         tags = tagsList,
-                        receiptUrl = txn["receipt_url"] as? String
+                        receiptUrl = txn["receipt_url"]?.jsonPrimitive?.content
                     )
                 } catch (_: Exception) {
                     null
@@ -270,7 +280,7 @@ class TransactionController {
                     }
                 }
 
-            val count = response.decodeList<Map<String, Any>>().size
+            val count = response.decodeList<JsonObject>().size
             Result.success(count)
         } catch (e: Exception) {
             Result.failure(e)
@@ -326,11 +336,11 @@ class TransactionController {
                     }
                 }
 
-            val transactions = response.decodeList<Map<String, Any>>()
+            val transactions = response.decodeList<JsonObject>()
 
             // Sort by date (newest first)
             val sortedTransactions = transactions.sortedByDescending {
-                it["transaction_date"] as? String ?: ""
+                it["transaction_date"]?.jsonPrimitive?.content ?: ""
             }
 
             // Create CSV file
@@ -343,22 +353,27 @@ class TransactionController {
 
                 // Write transaction rows
                 sortedTransactions.forEach { txn ->
-                    val category = txn["categories"] as? Map<*, *>
-                    val categoryName = category?.get("name") as? String ?: "Unknown"
+                    val category = txn["categories"]?.jsonObject
+                    val categoryName = category?.get("name")?.jsonPrimitive?.content ?: "Unknown"
 
                     // Handle tags
                     val tagsStr = when (val tagsValue = txn["tags"]) {
-                        is List<*> -> tagsValue.mapNotNull { it as? String }.joinToString("; ")
-                        is String -> tagsValue
-                        else -> ""
+                        null -> ""
+                        else -> {
+                            try {
+                                tagsValue.jsonArray.joinToString("; ") { it.jsonPrimitive.content }
+                            } catch (e: Exception) {
+                                tagsValue.jsonPrimitive.content
+                            }
+                        }
                     }
 
-                    writer.append("\"${txn["transaction_date"]}\",")
+                    writer.append("\"${txn["transaction_date"]?.jsonPrimitive?.content ?: ""}\",")
                     writer.append("\"$categoryName\",")
-                    writer.append("\"${txn["transaction_type"]}\",")
-                    writer.append("${txn["amount"]},")
-                    writer.append("\"${txn["payment_method"] ?: ""}\",")
-                    writer.append("\"${txn["description"] ?: ""}\",")
+                    writer.append("\"${txn["transaction_type"]?.jsonPrimitive?.content ?: ""}\",")
+                    writer.append("${txn["amount"]?.jsonPrimitive?.content ?: "0"},")
+                    writer.append("\"${txn["payment_method"]?.jsonPrimitive?.content ?: ""}\",")
+                    writer.append("\"${txn["description"]?.jsonPrimitive?.content ?: ""}\",")
                     writer.append("\"$tagsStr\"\n")
                 }
             }
