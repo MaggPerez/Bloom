@@ -90,17 +90,269 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import kotlin.collections.listOf
 import androidx.compose.material3.NavigationBarItem
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bloom.datamodels.BottomNavItemDataModel
+import com.example.bloom.viewmodel.BudgetViewModel
 
 
 //val supabase = SupabaseClient.client
 //val user = supabase.auth.currentUserOrNull()
-@Serializable
-data class Instrument(
-    val id: Int,
-    val name: String,
-)
 
+@Composable
+fun DashboardScreen(
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    budgetViewModel: BudgetViewModel = viewModel()
+) {
+
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
+
+    //    val email = user?.email
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
+
+    // Categories are now loaded from BudgetViewModel
+    // No need for hardcoded data anymore
+
+
+
+    // Get current month and year
+    val currentDate = remember { LocalDate.now() }
+    val monthName = currentDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
+    val year = currentDate.year
+
+    // Define colors for metrics
+    val greenColor = Color(0xFF10B981)
+    val redColor = Color(0xFFEF4444)
+    val blueColor = Color(0xFF3B82F6)
+    val yellowColor = Color(0xFFFBBF24)
+
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(
+                navController = navController,
+                currentRoute = currentRoute
+            )
+        }
+    ) { paddingValues ->
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        )
+        {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .windowInsetsPadding(WindowInsets.captionBar)
+                    .verticalScroll(scrollState)
+                    .padding(16.dp)
+            ) {
+//            Text("Hello $email")
+//            InstrumentsList()
+
+                //header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+
+                        //Dashboard Title
+                        Text(
+                            text = "Dashboard",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                navController.navigate("main_screen") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+
+                                //todo supabase signout
+                            }
+                        },
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Sign Out",
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Text("Sign Out")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+
+
+
+                // 2x2 Metric Card Layout
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+
+                    //monthly budget and Spent
+                    MetricCard(
+                        title = "Monthly Budget",
+                        value = "$${String.format(Locale.US, "%.0f", budgetViewModel.monthlyBudget)}",
+                        subtitle = "Total allocated",
+                        icon = Icons.Default.Settings,
+                        backgroundColor = blueColor,
+                        iconTint = blueColor,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    MetricCard(
+                        title = "Spent",
+                        value = "$${String.format(Locale.US, "%.2f", budgetViewModel.totalSpent)}",
+                        subtitle = "${String.format(Locale.US, "%.1f", budgetViewModel.spentPercentage)}% of budget",
+                        icon = Icons.Default.ShoppingCart,
+                        backgroundColor = redColor,
+                        iconTint = redColor,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    MetricCard(
+                        title = "Remaining",
+                        value = "$${String.format(Locale.US, "%.2f", budgetViewModel.remaining)}",
+                        subtitle = "Can still spend",
+                        icon = Icons.Default.CheckCircle,
+                        backgroundColor = greenColor,
+                        iconTint = greenColor,
+                        modifier = Modifier.weight(1f),
+                        progressPercentage = budgetViewModel.remainingPercentage
+                    )
+
+                    MetricCard(
+                        title = "Savings Goal",
+                        value = "$${String.format(Locale.US, "%.0f", budgetViewModel.currentSavings)}",
+                        subtitle = "of $${String.format(Locale.US, "%.0f", budgetViewModel.savingsGoal)}",
+                        icon = Icons.Default.Star,
+                        backgroundColor = yellowColor,
+                        iconTint = yellowColor,
+                        modifier = Modifier.weight(1f),
+                        progressPercentage = budgetViewModel.savingsPercentage
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+
+                //spending pie chart breakdown
+                SpendingPieChart(
+                    categories = budgetViewModel.categories,
+                    totalSpent = budgetViewModel.totalSpent
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+
+                //quick action section
+                Text(
+                    text = "Quick Actions",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    QuickActionButton(
+                        label = "Add Transaction",
+                        icon = Icons.Default.Add,
+                        backgroundColor = blueColor,
+                        iconTint = blueColor,
+                        onClick = { navController.navigate("transaction_screen") },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    QuickActionButton(
+                        label = "View Categories",
+                        icon = Icons.Default.Home,
+                        backgroundColor = yellowColor,
+                        iconTint = yellowColor,
+                        onClick = { /* TODO: Navigate to categories */ },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickActionButton(
+                        label = "Set Budget",
+                        icon = Icons.Default.Settings,
+                        backgroundColor = greenColor,
+                        iconTint = greenColor,
+                        onClick = { /* TODO: Navigate to budget settings */ },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    QuickActionButton(
+                        label = "View Reports",
+                        icon = Icons.Default.AccountCircle,
+                        backgroundColor = redColor,
+                        iconTint = redColor,
+                        onClick = { /* TODO: Navigate to reports */ },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+
+
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            navController.navigate("main_screen") {
+                                popUpTo(0) { inclusive = true }
+                            }
+//                        supabase.auth.signOut()
+                        }
+                    }
+                ) {
+                    Text(text = "Sign Out")
+                }
+            }
+        }
+
+    }
+
+
+}
 
 @Composable
 fun MetricCard(
@@ -205,7 +457,7 @@ fun LinearProgressBar(
 
 @Composable
 fun SpendingPieChart(
-    categories: List<FinancialDataModels.CategorySpending>,
+    categories: List<com.example.bloom.datamodels.CategoryWithBudget>,
     totalSpent: Double,
     modifier: Modifier = Modifier
 ) {
@@ -227,27 +479,38 @@ fun SpendingPieChart(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PieChart(
-                    categories = categories,
-                    modifier = Modifier.size(160.dp)
+            // Show empty state if no categories with spending
+            if (categories.isEmpty() || totalSpent == 0.0) {
+                Text(
+                    text = "No spending data yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(vertical = 32.dp)
                 )
-
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    categories.forEach { (category, amount, color, icon) ->
-                        val percentage = if (totalSpent > 0) (amount / totalSpent * 100).toInt() else 0
-                        LegendItem(
-                            color = color,
-                            label = category,
-                            percentage = percentage
-                        )
+                    PieChart(
+                        categories = categories,
+                        modifier = Modifier.size(160.dp)
+                    )
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        categories.forEach { category ->
+                            val percentage = if (totalSpent > 0) (category.spent / totalSpent * 100).toInt() else 0
+                            if (percentage > 0) {
+                                LegendItem(
+                                    color = category.color,
+                                    label = category.name,
+                                    percentage = percentage
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -259,10 +522,12 @@ fun SpendingPieChart(
 
 @Composable
 fun PieChart(
-    categories: List<FinancialDataModels.CategorySpending>,
+    categories: List<com.example.bloom.datamodels.CategoryWithBudget>,
     modifier: Modifier = Modifier
 ) {
-    val total = categories.sumOf { it.amount }
+    // Only show categories with spending > 0
+    val categoriesWithSpending = categories.filter { it.spent > 0 }
+    val total = categoriesWithSpending.sumOf { it.spent }
 
     Canvas(modifier = modifier) {
         val canvasSize = size.minDimension
@@ -271,8 +536,8 @@ fun PieChart(
 
         var startAngle = -90f
 
-        categories.forEach { category ->
-            val sweepAngle = if (total > 0) ((category.amount / total) * 360).toFloat() else 0f
+        categoriesWithSpending.forEach { category ->
+            val sweepAngle = if (total > 0) ((category.spent / total) * 360).toFloat() else 0f
 
             drawArc(
                 color = category.color,
@@ -447,275 +712,7 @@ fun BottomNavigationBar(
 
 
 
-@Composable
-fun DashboardScreen(
-    navController: NavController,
-    modifier: Modifier = Modifier,
-) {
 
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
-
-
-    //    val email = user?.email
-    val coroutineScope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
-
-    val budgetSummary = remember {
-        FinancialDataModels.BudgetSummary(
-            monthlyBudget = 1200.0,
-            totalSpent = 847.50,
-            savingsGoal = 500.0,
-            currentSavings = 325.0
-        )
-    }
-
-    val categorySpending = remember {
-        listOf(
-            FinancialDataModels.CategorySpending("Food", 285.0, Color(0xFF4CAF50), Icons.Default.Add),
-            FinancialDataModels.CategorySpending("Transport", 120.0, Color(0xFF2196F3), Icons.Default.Add),
-            FinancialDataModels.CategorySpending("Education", 200.0, Color(0xFFFFC107), Icons.Default.Add),
-            FinancialDataModels.CategorySpending("Entertainment", 142.50, Color(0xFFFF5722), Icons.Default.Add),
-            FinancialDataModels.CategorySpending("Bills", 100.0, Color(0xFF9C27B0), Icons.Default.Add)
-        )
-    }
-
-
-
-    // Get current month and year
-    val currentDate = remember { LocalDate.now() }
-    val monthName = currentDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
-    val year = currentDate.year
-
-    // Define colors for metrics
-    val greenColor = Color(0xFF10B981)
-    val redColor = Color(0xFFEF4444)
-    val blueColor = Color(0xFF3B82F6)
-    val yellowColor = Color(0xFFFBBF24)
-
-    Scaffold(
-        bottomBar = {
-            BottomNavigationBar(
-                navController = navController,
-                currentRoute = currentRoute
-            )
-        }
-    ) { paddingValues ->
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        )
-        {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .windowInsetsPadding(WindowInsets.captionBar)
-                    .verticalScroll(scrollState)
-                    .padding(16.dp)
-            ) {
-//            Text("Hello $email")
-//            InstrumentsList()
-
-                    //header
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-
-                            //Dashboard Title
-                            Text(
-                                text = "Dashboard",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                coroutineScope.launch {
-                                    navController.navigate("main_screen") {
-                                        popUpTo(0) { inclusive = true }
-                                    }
-
-                                    //todo supabase signout
-                                }
-                            },
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                contentDescription = "Sign Out",
-                                modifier = Modifier.size(20.dp)
-                            )
-
-                            Spacer(modifier = Modifier.width(4.dp))
-
-                            Text("Sign Out")
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-
-
-
-                    // 2x2 Metric Card Layout
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-
-                        //monthly budget and Spent
-                        MetricCard(
-                            title = "Monthly Budget",
-                            value = "$${String.format(Locale.US, "%.0f", budgetSummary.monthlyBudget)}",
-                            subtitle = "Total allocated",
-                            icon = Icons.Default.Settings,
-                            backgroundColor = blueColor,
-                            iconTint = blueColor,
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        MetricCard(
-                            title = "Spent",
-                            value = "$${String.format(Locale.US, "%.2f", budgetSummary.totalSpent)}",
-                            subtitle = "${String.format(Locale.US, "%.1f", budgetSummary.spentPercentage)}% of budget",
-                            icon = Icons.Default.ShoppingCart,
-                            backgroundColor = redColor,
-                            iconTint = redColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        MetricCard(
-                            title = "Remaining",
-                            value = "$${String.format(Locale.US, "%.2f", budgetSummary.remaining)}",
-                            subtitle = "Can still spend",
-                            icon = Icons.Default.CheckCircle,
-                            backgroundColor = greenColor,
-                            iconTint = greenColor,
-                            modifier = Modifier.weight(1f),
-                            progressPercentage = budgetSummary.remainingPercentage
-                        )
-
-                        MetricCard(
-                            title = "Savings Goal",
-                            value = "$${String.format(Locale.US, "%.0f", budgetSummary.currentSavings)}",
-                            subtitle = "of $${String.format(Locale.US, "%.0f", budgetSummary.savingsGoal)}",
-                            icon = Icons.Default.Star,
-                            backgroundColor = yellowColor,
-                            iconTint = yellowColor,
-                            modifier = Modifier.weight(1f),
-                            progressPercentage = budgetSummary.savingsPercentage
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-
-                    //spending pie chart breakdown
-                    SpendingPieChart(
-                        categories = categorySpending,
-                        totalSpent = budgetSummary.totalSpent
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-
-                    //quick action section
-                    Text(
-                        text = "Quick Actions",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        QuickActionButton(
-                            label = "Add Transaction",
-                            icon = Icons.Default.Add,
-                            backgroundColor = blueColor,
-                            iconTint = blueColor,
-                            onClick = { navController.navigate("transaction_screen") },
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        QuickActionButton(
-                            label = "View Categories",
-                            icon = Icons.Default.Home,
-                            backgroundColor = yellowColor,
-                            iconTint = yellowColor,
-                            onClick = { /* TODO: Navigate to categories */ },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        QuickActionButton(
-                            label = "Set Budget",
-                            icon = Icons.Default.Settings,
-                            backgroundColor = greenColor,
-                            iconTint = greenColor,
-                            onClick = { /* TODO: Navigate to budget settings */ },
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        QuickActionButton(
-                            label = "View Reports",
-                            icon = Icons.Default.AccountCircle,
-                            backgroundColor = redColor,
-                            iconTint = redColor,
-                            onClick = { /* TODO: Navigate to reports */ },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-
-
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                navController.navigate("main_screen") {
-                                    popUpTo(0) { inclusive = true }
-                                }
-//                        supabase.auth.signOut()
-                            }
-                        }
-                    ) {
-                        Text(text = "Sign Out")
-                    }
-            }
-        }
-
-    }
-
-
-}
 
 //@Composable
 //fun InstrumentsList() {
