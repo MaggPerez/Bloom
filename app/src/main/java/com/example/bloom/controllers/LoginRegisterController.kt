@@ -3,6 +3,16 @@ package com.example.bloom.controllers
 import com.example.bloom.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.postgrest.from
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class UserProfile(
+    val id: String,
+    val email: String,
+    val username: String?,
+    val full_name: String?
+)
 
 class LoginRegisterController() {
     suspend fun onHandleLogin(email: String, password: String): Any {
@@ -31,7 +41,7 @@ class LoginRegisterController() {
 
     }
 
-    suspend fun onHandleRegister(email: String, password: String): Any {
+    suspend fun onHandleRegister(fullName: String, username: String, email: String, password: String): Any {
         if(email.isEmpty() && password.isEmpty()){
             return "Email and Password Fields are Empty"
         }
@@ -50,6 +60,18 @@ class LoginRegisterController() {
                 this.email = email
                 this.password = password
             }
+
+            //inserting fullname and username to user_profiles table
+            val userId = supabase.auth.currentUserOrNull()?.id ?: throw Exception("User ID not found")
+
+            val userProfile = UserProfile(
+                id = userId,
+                email = email,
+                username = username,
+                full_name = fullName
+            )
+
+            supabase.from("user_profiles").insert(userProfile)
 
             true
         } catch (e: Exception) {

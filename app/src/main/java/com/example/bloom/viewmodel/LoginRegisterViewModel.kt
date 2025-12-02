@@ -8,6 +8,8 @@ import com.example.bloom.controllers.LoginRegisterController
 
 class LoginRegisterViewModel: ViewModel() {
     //register variables
+    var fullName by mutableStateOf("")
+    var username by mutableStateOf("")
     var createEmail by mutableStateOf("")
     var createPassword by mutableStateOf("")
 
@@ -36,7 +38,7 @@ class LoginRegisterViewModel: ViewModel() {
     }
 
     suspend fun register(): Boolean {
-        status = loginController.onHandleRegister(createEmail, createPassword)
+        status = loginController.onHandleRegister(fullName, username, createEmail, createPassword)
 
         //if there is an error message, an Alert Dialog will show up
         if(status is String){
