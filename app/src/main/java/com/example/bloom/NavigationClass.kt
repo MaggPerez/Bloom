@@ -70,6 +70,10 @@ fun Navigation() {
             TransactionScreen(navController)
         }
 
+        composable("settings_screen") {
+            SettingsScreen(navController)
+        }
+
 
     }
 }

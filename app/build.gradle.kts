@@ -75,12 +75,18 @@ dependencies {
     //icons
     implementation("androidx.compose.material:material-icons-extended-android:1.6.7") // Use the latest version
 
+    // DataStore for local theme preference storage
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // Coil for image loading (avatar display)
+    implementation("io.coil-kt:coil-compose:2.5.0")
 
     //supabase
     implementation(platform("io.github.jan-tennert.supabase:bom:3.2.5"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt:3.2.6")
     implementation("io.github.jan-tennert.supabase:auth-kt:3.2.6")
     implementation("io.github.jan-tennert.supabase:realtime-kt:3.2.6")
+    implementation("io.github.jan-tennert.supabase:storage-kt:3.2.6")
 
     //ktor
     implementation("io.ktor:ktor-client-android:3.3.1")

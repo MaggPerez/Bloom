@@ -10,8 +10,10 @@ import kotlinx.serialization.Serializable
 data class UserProfile(
     val id: String,
     val email: String,
-    val username: String?,
-    val full_name: String?
+    val username: String? = null,
+    val full_name: String? = null,
+    val avatar_url: String? = null,
+    val theme_preference: String = "system"
 )
 
 class LoginRegisterController() {

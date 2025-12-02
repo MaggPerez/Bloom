@@ -92,9 +92,15 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun BloomTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themePreference: String = "system",
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themePreference) {
+        "dark" -> true
+        "light" -> false
+        else -> isSystemInDarkTheme()
+    }
+
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(
