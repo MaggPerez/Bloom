@@ -49,7 +49,7 @@ class AIFeatureDataModel {
                 icon = R.drawable.robot_2_24px,
                 color = aiPurple,
                 actionType = AIFeatureDataModel.AIActionType.NAVIGATE_TO_SCREEN,
-                route = "dashboard_screen"
+                route = "aichatbot_screen"
             ),
 
             AIFeature(

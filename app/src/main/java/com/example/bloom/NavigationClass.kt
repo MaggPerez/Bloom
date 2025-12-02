@@ -38,6 +38,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.bloom.aifeatures.AiChatbotScreen
 import com.example.bloom.ui.theme.BloomTheme
 
 @Composable
@@ -72,6 +73,10 @@ fun Navigation() {
 
         composable("settings_screen") {
             SettingsScreen(navController)
+        }
+
+        composable("aichatbot_screen"){
+            AiChatbotScreen(navController)
         }
 
 
