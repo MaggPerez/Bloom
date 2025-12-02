@@ -110,6 +110,22 @@ fun RegisterScreen(
             )
 
 
+            //first name
+            TextFields(
+                labelText = "Full name",
+                textInput = loginRegisterViewModel.fullName,
+                onValueChange = { loginRegisterViewModel.fullName = it},
+                modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
+            )
+
+
+            //last name
+            TextFields(
+                labelText = "Create username",
+                textInput = loginRegisterViewModel.username,
+                onValueChange = { loginRegisterViewModel.username = it},
+                modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
+            )
 
             //create email
             TextFields(
@@ -119,9 +135,12 @@ fun RegisterScreen(
                 modifier = modifier.padding(bottom = 8.dp).fillMaxWidth()
             )
 
+
+
+
             //create password
             TextFields(
-                labelText = "Enter your password",
+                labelText = "Create password",
                 textInput = loginRegisterViewModel.createPassword,
                 onValueChange = { loginRegisterViewModel.createPassword = it },
                 modifier = modifier

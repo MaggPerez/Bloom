@@ -95,8 +95,8 @@ import com.example.bloom.datamodels.BottomNavItemDataModel
 import com.example.bloom.viewmodel.BudgetViewModel
 
 
-//val supabase = SupabaseClient.client
-//val user = supabase.auth.currentUserOrNull()
+val supabase = SupabaseClient.client
+val user = supabase.auth.currentUserOrNull()
 
 @Composable
 fun DashboardScreen(
@@ -109,13 +109,9 @@ fun DashboardScreen(
     val currentRoute = backStackEntry?.destination?.route
 
 
-    //    val email = user?.email
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-
-    // Categories are now loaded from BudgetViewModel
-    // No need for hardcoded data anymore
 
 
 
@@ -151,8 +147,6 @@ fun DashboardScreen(
                     .verticalScroll(scrollState)
                     .padding(16.dp)
             ) {
-//            Text("Hello $email")
-//            InstrumentsList()
 
                 //header
                 Row(
@@ -340,7 +334,7 @@ fun DashboardScreen(
                             navController.navigate("main_screen") {
                                 popUpTo(0) { inclusive = true }
                             }
-//                        supabase.auth.signOut()
+                        supabase.auth.signOut()
                         }
                     }
                 ) {
@@ -708,33 +702,6 @@ fun BottomNavigationBar(
     }
 }
 
-
-
-
-
-
-
-//@Composable
-//fun InstrumentsList() {
-//    var instruments by remember { mutableStateOf<List<Instrument>>(listOf()) }
-//    LaunchedEffect(Unit) {
-//        withContext(Dispatchers.IO) {
-//            instruments = supabase.from("instruments")
-//                .select().decodeList<Instrument>()
-//        }
-//    }
-//    LazyColumn {
-//        items(
-//            instruments,
-//            key = { instrument -> instrument.id },
-//        ) { instrument ->
-//            Text(
-//                instrument.name,
-//                modifier = Modifier.padding(8.dp),
-//            )
-//        }
-//    }
-//}
 
 
 
