@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -61,6 +62,7 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -86,6 +88,10 @@ fun AiChatbotScreen(
     // State for text input
     var promptText by remember { mutableStateOf("") }
     
+    // State for selected file
+    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedFileName by remember { mutableStateOf<String?>(null) }
+
     // State for chat messages
     val messages = remember { mutableStateListOf<ChatMessage>(
         ChatMessage("1", "Hello! I am your AI assistant. How can I help you today?", false)
@@ -96,29 +102,8 @@ fun AiChatbotScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let {
-            val filename = it.lastPathSegment ?: "document"
-            messages.add(ChatMessage(UUID.randomUUID().toString(), "Uploaded file: $filename", true))
-            messages.add(ChatMessage(UUID.randomUUID().toString(), "Analyzing file...", false))
-
-            scope.launch {
-                val file = copyUriToTempFile(context, it)
-                if (file != null) {
-                    try {
-                        val requestFile = file.asRequestBody(context.contentResolver.getType(it)?.toMediaTypeOrNull())
-                        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-                        
-                        val response = RetrofitInstance.instance.processFile(body, null)
-                        messages.removeAt(messages.lastIndex) // Remove "Analyzing file..."
-                        messages.add(ChatMessage(UUID.randomUUID().toString(), response.message, false))
-                    } catch (e: Exception) {
-                        messages.removeAt(messages.lastIndex)
-                        messages.add(ChatMessage(UUID.randomUUID().toString(), "Error analyzing file: ${e.message}", false))
-                    }
-                } else {
-                    messages.removeAt(messages.lastIndex)
-                    messages.add(ChatMessage(UUID.randomUUID().toString(), "Error processing file", false))
-                }
-            }
+            selectedFileUri = it
+            selectedFileName = it.lastPathSegment ?: "document"
         }
     }
 
@@ -138,6 +123,9 @@ fun AiChatbotScreen(
                             // Clear chat and start new conversation
                             messages.clear()
                             messages.add(ChatMessage(UUID.randomUUID().toString(), "Starting a new conversation...", false))
+                            selectedFileUri = null
+                            selectedFileName = null
+                            promptText = ""
                         }
                     ) {
                         Icon(
@@ -159,77 +147,192 @@ fun AiChatbotScreen(
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Upload File Button (Left of Text Field)
-                    IconButton(
-                        onClick = { 
-                            // Launch file picker for PDF and CSV
-                            launcher.launch(arrayOf("application/pdf", "text/csv")) 
+                    // Selected File Indicator
+                    if (selectedFileName != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .background(PrimaryPurple.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Attached: $selectedFileName",
+                                color = PrimaryPurple,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1
+                            )
+                            IconButton(
+                                onClick = {
+                                    selectedFileUri = null
+                                    selectedFileName = null
+                                },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Remove file",
+                                    tint = PrimaryPurple,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AttachFile,
-                            contentDescription = "Upload File",
-                            tint = PrimaryPurple
-                        )
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Chat Text Field
-                    OutlinedTextField(
-                        value = promptText,
-                        onValueChange = { promptText = it },
-                        placeholder = { Text("Ask me anything...") },
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .background(MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryPurple,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        maxLines = 3
-                    )
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Upload File Button (Left of Text Field)
+                        IconButton(
+                            onClick = { 
+                                // Launch file picker for PDF and CSV
+                                launcher.launch(arrayOf("application/pdf", "text/csv")) 
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AttachFile,
+                                contentDescription = "Upload File",
+                                tint = PrimaryPurple
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                    // Send Button
-                    IconButton(
-                        onClick = { 
-                            if (promptText.isNotBlank()) {
-                                val textToSend = promptText
-                                messages.add(ChatMessage(UUID.randomUUID().toString(), textToSend, true))
-                                promptText = ""
-                                messages.add(ChatMessage(UUID.randomUUID().toString(), "Thinking...", false))
-                                
-                                scope.launch {
-                                    try {
-                                        val request = AIFeatureDataModel.ChatRequest(message = textToSend)
-                                        val response = RetrofitInstance.instance.chat(request)
-                                        messages.removeAt(messages.lastIndex) // Remove "Thinking..."
-                                        messages.add(ChatMessage(UUID.randomUUID().toString(), response.message, false))
-                                    } catch (e: Exception) {
-                                        messages.removeAt(messages.lastIndex)
-                                        messages.add(ChatMessage(UUID.randomUUID().toString(), "Error: ${e.message}", false))
+                        // Chat Text Field
+                        OutlinedTextField(
+                            value = promptText,
+                            onValueChange = { promptText = it },
+                            placeholder = { Text("Ask me anything...") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .background(MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryPurple,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            maxLines = 3
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Send Button
+                        IconButton(
+                            onClick = { 
+                                val currentFileUri = selectedFileUri
+                                if (currentFileUri != null) {
+                                    // Handle File Upload with optional text
+                                    val fileName = selectedFileName ?: "file"
+                                    val textToSend = promptText
+                                    
+                                    val displayMessage = if (textToSend.isNotBlank()) {
+                                        "Uploaded file: $fileName\n\n$textToSend"
+                                    } else {
+                                        "Uploaded file: $fileName"
+                                    }
+
+                                    //adds user message of file being uploaded to chat and A.I response placeholder of it analyzing the file
+                                    messages.add(ChatMessage(UUID.randomUUID().toString(), displayMessage, true))
+                                    messages.add(ChatMessage(UUID.randomUUID().toString(), "Analyzing file...", false))
+                                    
+                                    // Clear inputs
+                                    selectedFileUri = null
+                                    selectedFileName = null
+                                    promptText = ""
+
+                                    scope.launch {
+                                        
+                                        //copy URI content to temp file
+                                        val file = copyUriToTempFile(context, currentFileUri)
+
+
+//                                      //checks if file conversion was successful
+                                        if (file != null) {
+                                            try {
+                                                val requestFile = file.asRequestBody(context.contentResolver.getType(currentFileUri)?.toMediaTypeOrNull())
+                                                val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+
+                                                //checks if the user provided any text along with the file
+                                                val userQuestion = if (textToSend.isNotBlank()) {
+                                                    textToSend.toRequestBody("text/plain".toMediaTypeOrNull())
+                                                } else {
+                                                    null
+                                                }
+
+
+                                                //makes api call to process the file and get the response
+                                                val response = RetrofitInstance.instance.processFile(body, userQuestion)
+                                                messages.removeAt(messages.lastIndex) // Remove "Analyzing file..."
+                                                messages.add(ChatMessage(UUID.randomUUID().toString(), response.message, false))
+
+                                                //display error message if exception occurs during api call
+                                            } catch (e: Exception) {
+                                                messages.removeAt(messages.lastIndex)
+                                                messages.add(ChatMessage(UUID.randomUUID().toString(), "Error analyzing file: ${e.message}", false))
+                                            }
+
+                                            //display error if file conversion failed
+                                        } else {
+                                            messages.removeAt(messages.lastIndex)
+                                            messages.add(ChatMessage(UUID.randomUUID().toString(), "Error processing file", false))
+                                        }
+                                    }
+
+                                    //if no file is selected, but text is present, it will send to backend as text only
+                                } else if (promptText.isNotBlank()) {
+
+                                    //stores user message into textToSend variable
+                                    val textToSend = promptText
+
+                                    //adds user message to chat
+                                    messages.add(ChatMessage(UUID.randomUUID().toString(), textToSend, true))
+                                    promptText = ""
+
+
+                                    //adds placeholder AI response while waiting for backend
+                                    messages.add(ChatMessage(UUID.randomUUID().toString(), "Thinking...", false))
+
+
+                                    //fetching AI response from backend
+                                    scope.launch {
+                                        try {
+
+                                            //fetching a response from the backend
+                                            val request = AIFeatureDataModel.ChatRequest(message = textToSend)
+                                            val response = RetrofitInstance.instance.chat(request)
+
+                                            //displaying the AI response in chat
+                                            messages.removeAt(messages.lastIndex) // Remove "Thinking..."
+                                            messages.add(ChatMessage(UUID.randomUUID().toString(), response.message, false))
+
+                                            //display error message if exception occurs during api call
+                                        } catch (e: Exception) {
+                                            messages.removeAt(messages.lastIndex)
+                                            messages.add(ChatMessage(UUID.randomUUID().toString(), "Error: ${e.message}", false))
+                                        }
                                     }
                                 }
-                            }
-                        },
-                        enabled = promptText.isNotBlank()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Send,
-                            contentDescription = "Send",
-                            tint = if (promptText.isNotBlank()) PrimaryPurple else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                        )
+                            },
+                            //send button is disabled if no text or file is selected
+                            enabled = promptText.isNotBlank() || selectedFileUri != null
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Send,
+                                contentDescription = "Send",
+                                tint = if (promptText.isNotBlank() || selectedFileUri != null) PrimaryPurple else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            )
+                        }
                     }
                 }
             }
