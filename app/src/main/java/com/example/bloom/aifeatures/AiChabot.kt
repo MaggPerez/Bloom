@@ -1,5 +1,6 @@
 package com.example.bloom.aifeatures
 
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,17 +42,28 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.bloom.datamodels.AIFeatureDataModel
+import com.example.bloom.retrofitapi.RetrofitInstance
 import com.example.bloom.ui.theme.BloomTheme
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
 
 val PrimaryPurple = Color(0xFF8B5CF6)
 
@@ -68,10 +80,13 @@ fun AiChatbotScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     // State for text input
     var promptText by remember { mutableStateOf("") }
     
-    // State for chat messages (dummy data for now)
+    // State for chat messages
     val messages = remember { mutableStateListOf<ChatMessage>(
         ChatMessage("1", "Hello! I am your AI assistant. How can I help you today?", false)
     ) }
@@ -81,7 +96,29 @@ fun AiChatbotScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let {
-             messages.add(ChatMessage(java.util.UUID.randomUUID().toString(), "Uploaded file: ${it.lastPathSegment ?: "document"}", true))
+            val filename = it.lastPathSegment ?: "document"
+            messages.add(ChatMessage(UUID.randomUUID().toString(), "Uploaded file: $filename", true))
+            messages.add(ChatMessage(UUID.randomUUID().toString(), "Analyzing file...", false))
+
+            scope.launch {
+                val file = copyUriToTempFile(context, it)
+                if (file != null) {
+                    try {
+                        val requestFile = file.asRequestBody(context.contentResolver.getType(it)?.toMediaTypeOrNull())
+                        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+                        
+                        val response = RetrofitInstance.instance.processFile(body, null)
+                        messages.removeLast() // Remove "Analyzing file..."
+                        messages.add(ChatMessage(UUID.randomUUID().toString(), response.message, false))
+                    } catch (e: Exception) {
+                        messages.removeLast()
+                        messages.add(ChatMessage(UUID.randomUUID().toString(), "Error analyzing file: ${e.message}", false))
+                    }
+                } else {
+                    messages.removeLast()
+                    messages.add(ChatMessage(UUID.randomUUID().toString(), "Error processing file", false))
+                }
+            }
         }
     }
 
@@ -100,7 +137,7 @@ fun AiChatbotScreen(
                         onClick = { 
                             // Clear chat and start new conversation
                             messages.clear()
-                            messages.add(ChatMessage(java.util.UUID.randomUUID().toString(), "Starting a new conversation...", false))
+                            messages.add(ChatMessage(UUID.randomUUID().toString(), "Starting a new conversation...", false))
                         }
                     ) {
                         Icon(
@@ -168,9 +205,22 @@ fun AiChatbotScreen(
                     IconButton(
                         onClick = { 
                             if (promptText.isNotBlank()) {
-                                messages.add(ChatMessage(java.util.UUID.randomUUID().toString(), promptText, true))
+                                val textToSend = promptText
+                                messages.add(ChatMessage(UUID.randomUUID().toString(), textToSend, true))
                                 promptText = ""
-                                // In a real app, this would trigger an API call
+                                messages.add(ChatMessage(UUID.randomUUID().toString(), "Thinking...", false))
+                                
+                                scope.launch {
+                                    try {
+                                        val request = AIFeatureDataModel.ChatRequest(message = textToSend)
+                                        val response = RetrofitInstance.instance.chat(request)
+                                        messages.removeLast() // Remove "Thinking..."
+                                        messages.add(ChatMessage(UUID.randomUUID().toString(), response.message, false))
+                                    } catch (e: Exception) {
+                                        messages.removeLast()
+                                        messages.add(ChatMessage(UUID.randomUUID().toString(), "Error: ${e.message}", false))
+                                    }
+                                }
                             }
                         },
                         enabled = promptText.isNotBlank()
@@ -252,6 +302,26 @@ fun ChatBubble(message: ChatMessage) {
             )
         }
     }
+}
+
+fun copyUriToTempFile(context: Context, uri: Uri): File? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        val file = File(context.cacheDir, "temp_upload_${System.currentTimeMillis()}.${getMimeType(context, uri)}")
+        val outputStream = FileOutputStream(file)
+        inputStream.copyTo(outputStream)
+        inputStream.close()
+        outputStream.close()
+        file
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+fun getMimeType(context: Context, uri: Uri): String {
+    val type = context.contentResolver.getType(uri)
+    return if (type == "application/pdf") "pdf" else "csv"
 }
 
 @Preview

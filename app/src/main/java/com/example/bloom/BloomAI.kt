@@ -129,23 +129,23 @@ fun BloomAiScreen(
 
 
                 Text(text = "Gemini Text: $geminiResponseText")
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            try {
-                                geminiResponseText = "Loading..."
-                                val data = RetrofitInstance.instance.getGeminiResponse()
-                                geminiResponseText = data.message
-                            }
-                            catch (e: Exception) {
-                                geminiResponseText = "Error: ${e.message}"
-                                e.printStackTrace()
-                            }
-                        }
-                    }
-                ) {
-                    Text(text = "Get Gemini Response")
-                }
+//                Button(
+//                    onClick = {
+//                        coroutineScope.launch {
+//                            try {
+//                                geminiResponseText = "Loading..."
+//                                val data = RetrofitInstance.instance.getGeminiResponse()
+//                                geminiResponseText = data.message
+//                            }
+//                            catch (e: Exception) {
+//                                geminiResponseText = "Error: ${e.message}"
+//                                e.printStackTrace()
+//                            }
+//                        }
+//                    }
+//                ) {
+//                    Text(text = "Get Gemini Response")
+//                }
             }
         }
     }

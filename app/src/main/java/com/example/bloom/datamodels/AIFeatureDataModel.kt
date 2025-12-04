@@ -22,7 +22,11 @@ class AIFeatureDataModel {
     )
 
     data class AIGenerativeDataModel(
-        val message: Any
+        val message: String
+    )
+
+    data class ChatRequest(
+        val message: String
     )
 
 
