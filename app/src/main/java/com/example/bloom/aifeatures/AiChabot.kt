@@ -108,14 +108,14 @@ fun AiChatbotScreen(
                         val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
                         
                         val response = RetrofitInstance.instance.processFile(body, null)
-                        messages.removeLast() // Remove "Analyzing file..."
+                        messages.removeAt(messages.lastIndex) // Remove "Analyzing file..."
                         messages.add(ChatMessage(UUID.randomUUID().toString(), response.message, false))
                     } catch (e: Exception) {
-                        messages.removeLast()
+                        messages.removeAt(messages.lastIndex)
                         messages.add(ChatMessage(UUID.randomUUID().toString(), "Error analyzing file: ${e.message}", false))
                     }
                 } else {
-                    messages.removeLast()
+                    messages.removeAt(messages.lastIndex)
                     messages.add(ChatMessage(UUID.randomUUID().toString(), "Error processing file", false))
                 }
             }
@@ -214,10 +214,10 @@ fun AiChatbotScreen(
                                     try {
                                         val request = AIFeatureDataModel.ChatRequest(message = textToSend)
                                         val response = RetrofitInstance.instance.chat(request)
-                                        messages.removeLast() // Remove "Thinking..."
+                                        messages.removeAt(messages.lastIndex) // Remove "Thinking..."
                                         messages.add(ChatMessage(UUID.randomUUID().toString(), response.message, false))
                                     } catch (e: Exception) {
-                                        messages.removeLast()
+                                        messages.removeAt(messages.lastIndex)
                                         messages.add(ChatMessage(UUID.randomUUID().toString(), "Error: ${e.message}", false))
                                     }
                                 }
