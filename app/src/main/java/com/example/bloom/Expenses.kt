@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.DirectionsCar
@@ -94,6 +95,28 @@ val defaultIcons = mapOf(
     "Education" to Icons.Default.School
 )
 
+val expenseColors = listOf(
+    "#EF4444", // Red
+    "#F97316", // Orange
+    "#F59E0B", // Amber
+    "#10B981", // Emerald
+    "#06B6D4", // Cyan
+    "#3B82F6", // Blue
+    "#6366F1", // Indigo
+    "#8B5CF6", // Violet
+    "#EC4899", // Pink
+    "#64748B"  // Slate
+)
+
+fun parseColor(hex: String?): Color {
+    return try {
+        if (hex.isNullOrBlank()) Color(0xFF3B82F6) // Default Blue
+        else Color(android.graphics.Color.parseColor(hex))
+    } catch (e: Exception) {
+        Color(0xFF3B82F6)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpensesScreen(
@@ -108,8 +131,6 @@ fun ExpensesScreen(
 
     // Define colors for metrics - matching Dashboard
     val blueColor = Color(0xFF3B82F6)
-    val greenColor = Color(0xFF10B981)
-    val redColor = Color(0xFFEF4444)
 
     Scaffold(
         bottomBar = {
@@ -202,13 +223,14 @@ fun ExpensesScreen(
         if (showAddExpenseDialog) {
             AddExpenseDialog(
                 onDismiss = { showAddExpenseDialog = false },
-                onConfirm = { name, amount, dueDate, imageUrl, iconName, tags ->
+                onConfirm = { name, amount, dueDate, imageUrl, iconName, colorHex, tags ->
                     viewModel.addExpense(
                         name = name,
                         amount = amount,
                         dueDate = dueDate,
                         imageUrl = imageUrl,
                         iconName = iconName,
+                        colorHex = colorHex,
                         tags = tags,
                         onSuccess = { showAddExpenseDialog = false },
                         onError = { /* TODO: Show error message */ }
@@ -352,6 +374,9 @@ fun ExpenseCard(
     expense: ExpenseData,
     modifier: Modifier = Modifier
 ) {
+    // Parse the stored hex color or default to primary
+    val cardColor = if (expense.color_hex != null) parseColor(expense.color_hex) else MaterialTheme.colorScheme.primary
+
     Card(
         modifier = modifier.clickable { /* TODO: Navigate to expense details */ },
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -371,16 +396,16 @@ fun ExpenseCard(
             // Icon or Image
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(cardColor.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 if (expense.icon_name != null && defaultIcons.containsKey(expense.icon_name)) {
                     Icon(
                         imageVector = defaultIcons[expense.icon_name]!!,
                         contentDescription = expense.icon_name,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = cardColor,
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
@@ -388,7 +413,7 @@ fun ExpenseCard(
                     Icon(
                         imageVector = Icons.Default.List,
                         contentDescription = "Expense",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = cardColor,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -424,7 +449,7 @@ fun ExpenseCard(
 @Composable
 fun AddExpenseDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, amount: Double, dueDate: String, imageUrl: String?, iconName: String?, tags: String?) -> Unit
+    onConfirm: (name: String, amount: Double, dueDate: String, imageUrl: String?, iconName: String?, colorHex: String?, tags: String?) -> Unit
 ) {
     var expenseName by remember { mutableStateOf("") }
     var expenseAmount by remember { mutableStateOf("") }
@@ -433,6 +458,10 @@ fun AddExpenseDialog(
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     var selectedIcon by remember { mutableStateOf<String?>(null) }
+    var selectedColorHex by remember { mutableStateOf<String?>(null) }
+
+    // Current selected color object for UI feedback
+    val currentColor = if (selectedColorHex != null) parseColor(selectedColorHex) else MaterialTheme.colorScheme.primary
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -502,6 +531,44 @@ fun AddExpenseDialog(
                     }
                 )
                 
+                // Color Selection
+                Text(
+                    text = "Select Color",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(expenseColors) { hex ->
+                        val color = parseColor(hex)
+                        val isSelected = selectedColorHex == hex
+                        
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .clickable { selectedColorHex = hex }
+                                .then(
+                                    if (isSelected) Modifier.background(Color.Black.copy(alpha = 0.2f)) else Modifier
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Icon Selection
                 Text(
                     text = "Select Icon",
@@ -514,21 +581,23 @@ fun AddExpenseDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(defaultIcons.toList()) { (name, icon) ->
+                        val isSelected = selectedIcon == name
+                        // Use the selected color for the icon if it's selected, otherwise use default
+                        val bg = if (isSelected) currentColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                        val tint = if (isSelected) currentColor else MaterialTheme.colorScheme.onSurfaceVariant
+                        
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (selectedIcon == name) MaterialTheme.colorScheme.primary 
-                                    else MaterialTheme.colorScheme.surfaceVariant
-                                )
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(bg)
                                 .clickable { selectedIcon = name },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = icon,
                                 contentDescription = name,
-                                tint = if (selectedIcon == name) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = tint,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -573,6 +642,7 @@ fun AddExpenseDialog(
                             selectedDate!!.format(DateTimeFormatter.ISO_LOCAL_DATE),
                             imageUrl.trim().ifBlank { null },
                             selectedIcon,
+                            selectedColorHex,
                             tags.trim().ifBlank { null }
                         )
                     }
