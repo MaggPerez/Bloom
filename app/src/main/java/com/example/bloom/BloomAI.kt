@@ -67,8 +67,6 @@ fun BloomAiScreen(
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-    var geminiResponseText by remember { mutableStateOf<Any>("Click to get gemini response") }
-
     //state for bottom sheet
     var showHealthScore by remember { mutableStateOf(false) }
     var showBillPredictionSheet by remember { mutableStateOf(false) }
@@ -126,26 +124,6 @@ fun BloomAiScreen(
                 }
 
 
-
-
-                Text(text = "Gemini Text: $geminiResponseText")
-//                Button(
-//                    onClick = {
-//                        coroutineScope.launch {
-//                            try {
-//                                geminiResponseText = "Loading..."
-//                                val data = RetrofitInstance.instance.getGeminiResponse()
-//                                geminiResponseText = data.message
-//                            }
-//                            catch (e: Exception) {
-//                                geminiResponseText = "Error: ${e.message}"
-//                                e.printStackTrace()
-//                            }
-//                        }
-//                    }
-//                ) {
-//                    Text(text = "Get Gemini Response")
-//                }
             }
         }
     }
