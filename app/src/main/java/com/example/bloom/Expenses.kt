@@ -389,56 +389,67 @@ fun ExpenseCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.Start
+                .padding(12.dp)
+                .fillMaxWidth()
         ) {
-            // Icon or Image
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(cardColor.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
+            // Top Row: Icon + Amount
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                if (expense.icon_name != null && defaultIcons.containsKey(expense.icon_name)) {
-                    Icon(
-                        imageVector = defaultIcons[expense.icon_name]!!,
-                        contentDescription = expense.icon_name,
-                        tint = cardColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    // Default fallback
-                    Icon(
-                        imageVector = Icons.Default.List,
-                        contentDescription = "Expense",
-                        tint = cardColor,
-                        modifier = Modifier.size(24.dp)
-                    )
+                // Icon
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(cardColor.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (expense.icon_name != null && defaultIcons.containsKey(expense.icon_name)) {
+                        Icon(
+                            imageVector = defaultIcons[expense.icon_name]!!,
+                            contentDescription = expense.icon_name,
+                            tint = cardColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        // Default fallback
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "Expense",
+                            tint = cardColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
+
+                // Amount
+                Text(
+                    text = String.format(java.util.Locale.US, "$%.2f", expense.amount),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Bottom Area: Name + Date
             Text(
                 text = expense.name,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
+            
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = String.format(java.util.Locale.US, "$%.2f", expense.amount),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            
             Text(
                 text = "Due: ${expense.due_date}",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
