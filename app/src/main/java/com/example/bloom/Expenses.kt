@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,11 +27,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -73,6 +82,17 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
+// Map of default icon names to ImageVectors
+val defaultIcons = mapOf(
+    "Shopping" to Icons.Default.ShoppingCart,
+    "Home" to Icons.Default.Home,
+    "Food" to Icons.Default.Fastfood,
+    "Transport" to Icons.Default.DirectionsCar,
+    "Utilities" to Icons.Default.Build,
+    "Health" to Icons.Default.LocalHospital,
+    "Education" to Icons.Default.School
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -182,12 +202,13 @@ fun ExpensesScreen(
         if (showAddExpenseDialog) {
             AddExpenseDialog(
                 onDismiss = { showAddExpenseDialog = false },
-                onConfirm = { name, amount, dueDate, imageUrl, tags ->
+                onConfirm = { name, amount, dueDate, imageUrl, iconName, tags ->
                     viewModel.addExpense(
                         name = name,
                         amount = amount,
                         dueDate = dueDate,
                         imageUrl = imageUrl,
+                        iconName = iconName,
                         tags = tags,
                         onSuccess = { showAddExpenseDialog = false },
                         onError = { /* TODO: Show error message */ }
@@ -347,6 +368,34 @@ fun ExpenseCard(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.Start
         ) {
+            // Icon or Image
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                if (expense.icon_name != null && defaultIcons.containsKey(expense.icon_name)) {
+                    Icon(
+                        imageVector = defaultIcons[expense.icon_name]!!,
+                        contentDescription = expense.icon_name,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    // Default fallback
+                    Icon(
+                        imageVector = Icons.Default.List,
+                        contentDescription = "Expense",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
             Text(
                 text = expense.name,
                 style = MaterialTheme.typography.titleMedium,
@@ -354,7 +403,7 @@ fun ExpenseCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = String.format(java.util.Locale.US, "$%.2f", expense.amount),
                 style = MaterialTheme.typography.headlineSmall,
@@ -375,7 +424,7 @@ fun ExpenseCard(
 @Composable
 fun AddExpenseDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, amount: Double, dueDate: String, imageUrl: String?, tags: String?) -> Unit
+    onConfirm: (name: String, amount: Double, dueDate: String, imageUrl: String?, iconName: String?, tags: String?) -> Unit
 ) {
     var expenseName by remember { mutableStateOf("") }
     var expenseAmount by remember { mutableStateOf("") }
@@ -383,6 +432,7 @@ fun AddExpenseDialog(
     var tags by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedIcon by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -451,6 +501,39 @@ fun AddExpenseDialog(
                         }
                     }
                 )
+                
+                // Icon Selection
+                Text(
+                    text = "Select Icon",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(defaultIcons.toList()) { (name, icon) ->
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (selectedIcon == name) MaterialTheme.colorScheme.primary 
+                                    else MaterialTheme.colorScheme.surfaceVariant
+                                )
+                                .clickable { selectedIcon = name },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = name,
+                                tint = if (selectedIcon == name) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
 
                 // Image URL Field (Optional)
                 OutlinedTextField(
@@ -489,6 +572,7 @@ fun AddExpenseDialog(
                             amount,
                             selectedDate!!.format(DateTimeFormatter.ISO_LOCAL_DATE),
                             imageUrl.trim().ifBlank { null },
+                            selectedIcon,
                             tags.trim().ifBlank { null }
                         )
                     }

@@ -165,6 +165,7 @@ data class ExpenseData(
     val amount: Double,
     val due_date: String, // Format: yyyy-MM-dd
     val image_url: String? = null,
+    val icon_name: String? = null, // Name of the default Android icon
     val tags: String? = null, // Comma-separated tags
     val created_at: String? = null,
     val updated_at: String? = null

@@ -87,6 +87,7 @@ class ExpensesViewModel : ViewModel() {
         amount: Double,
         dueDate: String, // yyyy-MM-dd
         imageUrl: String? = null,
+        iconName: String? = null,
         tags: String? = null,
         onSuccess: () -> Unit,
         onError: () -> Unit
@@ -100,6 +101,7 @@ class ExpensesViewModel : ViewModel() {
                 amount = amount,
                 due_date = dueDate,
                 image_url = imageUrl,
+                icon_name = iconName,
                 tags = tags
             )
             
