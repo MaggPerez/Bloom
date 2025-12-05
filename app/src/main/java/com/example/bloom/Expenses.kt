@@ -227,7 +227,7 @@ fun ExpensesScreen(
         if (showAddExpenseDialog) {
             AddExpenseDialog(
                 onDismiss = { showAddExpenseDialog = false },
-                onConfirm = { name, amount, dueDate, imageUrl, iconName, colorHex, tags ->
+                onConfirm = { name, amount, dueDate, imageUrl, iconName, colorHex, tags, frequency ->
                     viewModel.addExpense(
                         name = name,
                         amount = amount,
@@ -236,6 +236,7 @@ fun ExpensesScreen(
                         iconName = iconName,
                         colorHex = colorHex,
                         tags = tags,
+                        recurringFrequency = frequency,
                         onSuccess = { showAddExpenseDialog = false },
                         onError = { /* TODO: Show error message */ }
                     )
@@ -248,7 +249,7 @@ fun ExpensesScreen(
             EditExpenseDialog(
                 expense = expense,
                 onDismiss = { expenseToEdit = null },
-                onConfirm = { name, amount, dueDate, imageUrl, iconName, colorHex, tags ->
+                onConfirm = { name, amount, dueDate, imageUrl, iconName, colorHex, tags, frequency ->
                     viewModel.updateExpense(
                         id = expense.id!!,
                         name = name,
@@ -258,6 +259,7 @@ fun ExpensesScreen(
                         iconName = iconName,
                         colorHex = colorHex,
                         tags = tags,
+                        recurringFrequency = frequency,
                         onSuccess = { expenseToEdit = null },
                         onError = { /* TODO: Show error message */ }
                     )
@@ -454,12 +456,21 @@ fun ExpenseCard(
                 }
 
                 // Amount
-                Text(
-                    text = String.format(java.util.Locale.US, "$%.2f", expense.amount),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = String.format(java.util.Locale.US, "$%.2f", expense.amount),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (!expense.recurring_frequency.isNullOrBlank()) {
+                        Text(
+                            text = expense.recurring_frequency,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -489,7 +500,7 @@ fun ExpenseCard(
 @Composable
 fun AddExpenseDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, amount: Double, dueDate: String, imageUrl: String?, iconName: String?, colorHex: String?, tags: String?) -> Unit
+    onConfirm: (name: String, amount: Double, dueDate: String, imageUrl: String?, iconName: String?, colorHex: String?, tags: String?, recurringFrequency: String?) -> Unit
 ) {
     var expenseName by remember { mutableStateOf("") }
     var expenseAmount by remember { mutableStateOf("") }
@@ -499,6 +510,8 @@ fun AddExpenseDialog(
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     var selectedIcon by remember { mutableStateOf<String?>(null) }
     var selectedColorHex by remember { mutableStateOf<String?>(null) }
+    var selectedFrequency by remember { mutableStateOf<String?>(null) }
+    val frequencies = listOf("Daily", "Weekly", "Monthly", "Yearly")
 
     // Current selected color object for UI feedback
     val currentColor = if (selectedColorHex != null) parseColor(selectedColorHex) else MaterialTheme.colorScheme.primary
@@ -557,7 +570,7 @@ fun AddExpenseDialog(
                 OutlinedTextField(
                     value = selectedDate?.format(DateTimeFormatter.ISO_LOCAL_DATE) ?: "",
                     onValueChange = { },
-                    label = { Text("Due Date") },
+                    label = { Text("Start Date") },
                     placeholder = { Text("Select a date") },
                     modifier = Modifier.fillMaxWidth(),
                     readOnly = true,
@@ -570,6 +583,39 @@ fun AddExpenseDialog(
                         }
                     }
                 )
+
+                // Frequency Selection
+                Text(
+                    text = "Recurring Frequency",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(frequencies) { frequency ->
+                        val isSelected = selectedFrequency == frequency
+                        val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                        val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(backgroundColor)
+                                .clickable { selectedFrequency = if (isSelected) null else frequency }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = frequency,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = contentColor
+                            )
+                        }
+                    }
+                }
                 
                 // Color Selection
                 Text(
@@ -683,7 +729,8 @@ fun AddExpenseDialog(
                             imageUrl.trim().ifBlank { null },
                             selectedIcon,
                             selectedColorHex,
-                            tags.trim().ifBlank { null }
+                            tags.trim().ifBlank { null },
+                            selectedFrequency
                         )
                     }
                 },
@@ -737,7 +784,7 @@ fun AddExpenseDialog(
 fun EditExpenseDialog(
     expense: ExpenseData,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, amount: Double, dueDate: String, imageUrl: String?, iconName: String?, colorHex: String?, tags: String?) -> Unit
+    onConfirm: (name: String, amount: Double, dueDate: String, imageUrl: String?, iconName: String?, colorHex: String?, tags: String?, recurringFrequency: String?) -> Unit
 ) {
     var expenseName by remember { mutableStateOf(expense.name) }
     var expenseAmount by remember { mutableStateOf(expense.amount.toString()) }
@@ -755,6 +802,8 @@ fun EditExpenseDialog(
     }
     var selectedIcon by remember { mutableStateOf<String?>(expense.icon_name) }
     var selectedColorHex by remember { mutableStateOf<String?>(expense.color_hex) }
+    var selectedFrequency by remember { mutableStateOf<String?>(expense.recurring_frequency) }
+    val frequencies = listOf("Daily", "Weekly", "Monthly", "Yearly")
 
     // Current selected color object for UI feedback
     val currentColor = if (selectedColorHex != null) parseColor(selectedColorHex) else MaterialTheme.colorScheme.primary
@@ -827,6 +876,39 @@ fun EditExpenseDialog(
                     }
                 )
 
+                // Frequency Selection
+                Text(
+                    text = "Recurring Frequency",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(frequencies) { frequency ->
+                        val isSelected = selectedFrequency == frequency
+                        val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                        val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(backgroundColor)
+                                .clickable { selectedFrequency = if (isSelected) null else frequency }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = frequency,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = contentColor
+                            )
+                        }
+                    }
+                }
+
                 // Color Selection
                 Text(
                     text = "Select Color",
@@ -939,7 +1021,8 @@ fun EditExpenseDialog(
                             imageUrl.trim().ifBlank { null },
                             selectedIcon,
                             selectedColorHex,
-                            tags.trim().ifBlank { null }
+                            tags.trim().ifBlank { null },
+                            selectedFrequency
                         )
                     }
                 },

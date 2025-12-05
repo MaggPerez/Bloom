@@ -90,6 +90,7 @@ class ExpensesViewModel : ViewModel() {
         iconName: String? = null,
         colorHex: String? = null,
         tags: String? = null,
+        recurringFrequency: String? = null,
         onSuccess: () -> Unit,
         onError: () -> Unit
     ) {
@@ -104,7 +105,8 @@ class ExpensesViewModel : ViewModel() {
                 image_url = imageUrl,
                 icon_name = iconName,
                 color_hex = colorHex,
-                tags = tags
+                tags = tags,
+                recurring_frequency = recurringFrequency
             )
             
             val success = controller.createExpense(newExpense)
@@ -126,6 +128,7 @@ class ExpensesViewModel : ViewModel() {
         iconName: String? = null,
         colorHex: String? = null,
         tags: String? = null,
+        recurringFrequency: String? = null,
         onSuccess: () -> Unit,
         onError: () -> Unit
     ) {
@@ -141,7 +144,8 @@ class ExpensesViewModel : ViewModel() {
                 image_url = imageUrl,
                 icon_name = iconName,
                 color_hex = colorHex,
-                tags = tags
+                tags = tags,
+                recurring_frequency = recurringFrequency
             )
 
             val success = controller.updateExpense(updatedExpense)

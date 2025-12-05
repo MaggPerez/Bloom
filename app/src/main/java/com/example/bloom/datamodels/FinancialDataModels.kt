@@ -168,6 +168,7 @@ data class ExpenseData(
     val icon_name: String? = null, // Name of the default Android icon
     val color_hex: String? = null, // Hex code for the icon color
     val tags: String? = null, // Comma-separated tags
+    val recurring_frequency: String? = null, // "Daily", "Weekly", "Monthly", "Yearly"
     val created_at: String? = null,
     val updated_at: String? = null
 )
