@@ -144,11 +144,13 @@ fun AiChatbotScreen(
         bottomBar = {
             // Input Area
             Surface(
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 2.dp
+                color = Color.Transparent,
+                tonalElevation = 0.dp
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
                 ) {
                     // Selected File Indicator
                     if (selectedFileName != null) {
@@ -187,48 +189,79 @@ fun AiChatbotScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Upload File Button (Left of Text Field)
-                        IconButton(
-                            onClick = { 
-                                // Launch file picker for PDF and CSV
-                                launcher.launch(arrayOf("application/pdf", "text/csv")) 
-                            }
+                        // Upload File Button with circular background
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.AttachFile,
-                                contentDescription = "Upload File",
-                                tint = PrimaryPurple
+                            IconButton(
+                                onClick = {
+                                    // Launch file picker for PDF and CSV
+                                    launcher.launch(arrayOf("application/pdf", "text/csv"))
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AttachFile,
+                                    contentDescription = "Upload File",
+                                    tint = PrimaryPurple
+                                )
+                            }
+                        }
+
+                        // Chat Text Field with subtle background
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                        ) {
+                            OutlinedTextField(
+                                value = promptText,
+                                onValueChange = { promptText = it },
+                                placeholder = {
+                                    Text(
+                                        "Ask me anything...",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = PrimaryPurple,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                                ),
+                                textStyle = MaterialTheme.typography.bodyMedium,
+                                maxLines = 3
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        // Chat Text Field
-                        OutlinedTextField(
-                            value = promptText,
-                            onValueChange = { promptText = it },
-                            placeholder = { Text("Ask me anything...") },
+                        // Send Button with circular background
+                        Box(
                             modifier = Modifier
-                                .weight(1f)
-                                .background(MaterialTheme.colorScheme.surface),
-                            shape = RoundedCornerShape(24.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryPurple,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                            ),
-                            maxLines = 3
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        // Send Button
-                        IconButton(
-                            onClick = { 
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (promptText.isNotBlank() || selectedFileUri != null)
+                                        PrimaryPurple.copy(alpha = 0.15f)
+                                    else
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            IconButton(
+                                onClick = {
                                 val currentFileUri = selectedFileUri
                                 if (currentFileUri != null) {
                                     // Handle File Upload with optional text
@@ -324,14 +357,18 @@ fun AiChatbotScreen(
                                     }
                                 }
                             },
-                            //send button is disabled if no text or file is selected
-                            enabled = promptText.isNotBlank() || selectedFileUri != null
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Send,
-                                contentDescription = "Send",
-                                tint = if (promptText.isNotBlank() || selectedFileUri != null) PrimaryPurple else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                            )
+                                //send button is disabled if no text or file is selected
+                                enabled = promptText.isNotBlank() || selectedFileUri != null
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Send,
+                                    contentDescription = "Send",
+                                    tint = if (promptText.isNotBlank() || selectedFileUri != null)
+                                        PrimaryPurple
+                                    else
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                )
+                            }
                         }
                     }
                 }
