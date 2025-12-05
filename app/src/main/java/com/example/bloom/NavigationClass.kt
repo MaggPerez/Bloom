@@ -79,6 +79,10 @@ fun Navigation() {
             AiChatbotScreen(navController)
         }
 
+        composable("financials_screen"){
+            FinancialsScreen(navController)
+        }
+
 
     }
 }
