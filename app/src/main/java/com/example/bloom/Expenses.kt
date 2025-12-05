@@ -128,6 +128,7 @@ fun ExpensesScreen(
     val currentRoute = backStackEntry?.destination?.route
     val scrollState = rememberScrollState()
     var showAddExpenseDialog by remember { mutableStateOf(false) }
+    var expenseToEdit by remember { mutableStateOf<ExpenseData?>(null) }
 
     // Define colors for metrics - matching Dashboard
     val blueColor = Color(0xFF3B82F6)
@@ -214,7 +215,10 @@ fun ExpensesScreen(
                     }
                 } else {
                     // Expenses Grid (2x2 for now)
-                    ExpensesGrid(expenses = viewModel.expenses)
+                    ExpensesGrid(
+                        expenses = viewModel.expenses,
+                        onEditExpense = { expense -> expenseToEdit = expense }
+                    )
                 }
             }
         }
@@ -233,6 +237,28 @@ fun ExpensesScreen(
                         colorHex = colorHex,
                         tags = tags,
                         onSuccess = { showAddExpenseDialog = false },
+                        onError = { /* TODO: Show error message */ }
+                    )
+                }
+            )
+        }
+
+        // Edit Expense Dialog
+        expenseToEdit?.let { expense ->
+            EditExpenseDialog(
+                expense = expense,
+                onDismiss = { expenseToEdit = null },
+                onConfirm = { name, amount, dueDate, imageUrl, iconName, colorHex, tags ->
+                    viewModel.updateExpense(
+                        id = expense.id!!,
+                        name = name,
+                        amount = amount,
+                        dueDate = dueDate,
+                        imageUrl = imageUrl,
+                        iconName = iconName,
+                        colorHex = colorHex,
+                        tags = tags,
+                        onSuccess = { expenseToEdit = null },
                         onError = { /* TODO: Show error message */ }
                     )
                 }
@@ -325,6 +351,7 @@ fun ExpenseMetricItem(
 @Composable
 fun ExpensesGrid(
     expenses: List<ExpenseData>,
+    onEditExpense: (ExpenseData) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Create a 2x2 grid for now
@@ -340,6 +367,7 @@ fun ExpensesGrid(
                 rowExpenses.forEach { expense ->
                     ExpenseCard(
                         expense = expense,
+                        onClick = { onEditExpense(expense) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -372,13 +400,14 @@ fun ExpensesGrid(
 @Composable
 fun ExpenseCard(
     expense: ExpenseData,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Parse the stored hex color or default to primary
     val cardColor = if (expense.color_hex != null) parseColor(expense.color_hex) else MaterialTheme.colorScheme.primary
 
     Card(
-        modifier = modifier.clickable { /* TODO: Navigate to expense details */ },
+        modifier = modifier.clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(
             1.dp,
@@ -676,6 +705,264 @@ fun AddExpenseDialog(
     // Date Picker Dialog
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            selectedDate = Instant.ofEpochMilli(millis)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditExpenseDialog(
+    expense: ExpenseData,
+    onDismiss: () -> Unit,
+    onConfirm: (name: String, amount: Double, dueDate: String, imageUrl: String?, iconName: String?, colorHex: String?, tags: String?) -> Unit
+) {
+    var expenseName by remember { mutableStateOf(expense.name) }
+    var expenseAmount by remember { mutableStateOf(expense.amount.toString()) }
+    var imageUrl by remember { mutableStateOf(expense.image_url ?: "") }
+    var tags by remember { mutableStateOf(expense.tags ?: "") }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var selectedDate by remember {
+        mutableStateOf<LocalDate?>(
+            try {
+                LocalDate.parse(expense.due_date, DateTimeFormatter.ISO_LOCAL_DATE)
+            } catch (e: Exception) {
+                null
+            }
+        )
+    }
+    var selectedIcon by remember { mutableStateOf<String?>(expense.icon_name) }
+    var selectedColorHex by remember { mutableStateOf<String?>(expense.color_hex) }
+
+    // Current selected color object for UI feedback
+    val currentColor = if (selectedColorHex != null) parseColor(selectedColorHex) else MaterialTheme.colorScheme.primary
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Edit Expense",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close"
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Expense Name Field
+                OutlinedTextField(
+                    value = expenseName,
+                    onValueChange = { expenseName = it },
+                    label = { Text("Expense Name") },
+                    placeholder = { Text("e.g., Netflix Subscription") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                // Amount Field
+                OutlinedTextField(
+                    value = expenseAmount,
+                    onValueChange = { expenseAmount = it },
+                    label = { Text("Amount") },
+                    placeholder = { Text("0.00") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = { Text("$") }
+                )
+
+                // Due Date Field
+                OutlinedTextField(
+                    value = selectedDate?.format(DateTimeFormatter.ISO_LOCAL_DATE) ?: "",
+                    onValueChange = { },
+                    label = { Text("Due Date") },
+                    placeholder = { Text("Select a date") },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = "Select Date"
+                            )
+                        }
+                    }
+                )
+
+                // Color Selection
+                Text(
+                    text = "Select Color",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(expenseColors) { hex ->
+                        val color = parseColor(hex)
+                        val isSelected = selectedColorHex == hex
+
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .clickable { selectedColorHex = hex }
+                                .then(
+                                    if (isSelected) Modifier.background(Color.Black.copy(alpha = 0.2f)) else Modifier
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Icon Selection
+                Text(
+                    text = "Select Icon",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(defaultIcons.toList()) { (name, icon) ->
+                        val isSelected = selectedIcon == name
+                        // Use the selected color for the icon if it's selected, otherwise use default
+                        val bg = if (isSelected) currentColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                        val tint = if (isSelected) currentColor else MaterialTheme.colorScheme.onSurfaceVariant
+
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(bg)
+                                .clickable { selectedIcon = name },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = name,
+                                tint = tint,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Image URL Field (Optional)
+                OutlinedTextField(
+                    value = imageUrl,
+                    onValueChange = { imageUrl = it },
+                    label = { Text("Image URL (Optional)") },
+                    placeholder = { Text("https://example.com/logo.png") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = "Image"
+                        )
+                    }
+                )
+
+                // Tags Field (Optional)
+                OutlinedTextField(
+                    value = tags,
+                    onValueChange = { tags = it },
+                    label = { Text("Tags (Optional)") },
+                    placeholder = { Text("entertainment, subscription") },
+                    modifier = Modifier.fillMaxWidth(),
+                    supportingText = { Text("Separate tags with commas") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val amount = expenseAmount.toDoubleOrNull()
+                    if (expenseName.isNotBlank() && amount != null && amount > 0 && selectedDate != null) {
+                        onConfirm(
+                            expenseName.trim(),
+                            amount,
+                            selectedDate!!.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                            imageUrl.trim().ifBlank { null },
+                            selectedIcon,
+                            selectedColorHex,
+                            tags.trim().ifBlank { null }
+                        )
+                    }
+                },
+                enabled = expenseName.isNotBlank() &&
+                         expenseAmount.toDoubleOrNull() != null &&
+                         expenseAmount.toDoubleOrNull()!! > 0 &&
+                         selectedDate != null
+            ) {
+                Text("Update Expense")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+
+    // Date Picker Dialog
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+        )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {

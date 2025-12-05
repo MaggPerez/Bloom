@@ -37,4 +37,23 @@ class ExpensesController {
             }
         }
     }
+
+    suspend fun updateExpense(expense: ExpenseData): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                expense.id?.let { id ->
+                    supabase.from("expenses")
+                        .update(expense) {
+                            filter {
+                                eq("id", id)
+                            }
+                        }
+                    true
+                } ?: false
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
 }

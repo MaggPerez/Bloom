@@ -116,4 +116,41 @@ class ExpensesViewModel : ViewModel() {
             }
         }
     }
+
+    fun updateExpense(
+        id: String,
+        name: String,
+        amount: Double,
+        dueDate: String,
+        imageUrl: String? = null,
+        iconName: String? = null,
+        colorHex: String? = null,
+        tags: String? = null,
+        onSuccess: () -> Unit,
+        onError: () -> Unit
+    ) {
+        val currentUser = user ?: return
+
+        viewModelScope.launch {
+            val updatedExpense = ExpenseData(
+                id = id,
+                user_id = currentUser.id,
+                name = name,
+                amount = amount,
+                due_date = dueDate,
+                image_url = imageUrl,
+                icon_name = iconName,
+                color_hex = colorHex,
+                tags = tags
+            )
+
+            val success = controller.updateExpense(updatedExpense)
+            if (success) {
+                loadExpenses()
+                onSuccess()
+            } else {
+                onError()
+            }
+        }
+    }
 }
