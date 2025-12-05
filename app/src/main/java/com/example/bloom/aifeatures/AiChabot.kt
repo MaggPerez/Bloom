@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
@@ -113,9 +114,20 @@ fun AiChatbotScreen(
             CenterAlignedTopAppBar(
                 title = { 
                     Text(
-                        "AI Chatbot",
+                        "Bloom AI Chatbot",
                         fontWeight = FontWeight.Bold
                     ) 
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = { navController.popBackStack() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = PrimaryPurple
+                        )
+                    }
                 },
                 actions = {
                     IconButton(
