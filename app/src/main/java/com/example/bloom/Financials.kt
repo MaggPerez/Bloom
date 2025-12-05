@@ -110,7 +110,7 @@ fun FinancialsScreen(
                     description = "Track and categorize your expenses",
                     icon = Icons.Default.ShoppingCart,
                     color = Color(0xFFEF4444), // red
-                    onClick = { /* TODO: Navigate to expenses screen */ }
+                    onClick = { navController.navigate("expenses_screen") }
                 )
             }
         }
