@@ -24,9 +24,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -39,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,6 +55,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -58,6 +64,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.bloom.datamodels.ExpenseData
 import com.example.bloom.ui.theme.BloomTheme
@@ -74,103 +81,120 @@ fun ExpensesScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpensesViewModel = viewModel()
 ) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
     val scrollState = rememberScrollState()
     var showAddExpenseDialog by remember { mutableStateOf(false) }
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .verticalScroll(scrollState)
-                .padding(16.dp)
+    // Define colors for metrics - matching Dashboard
+    val blueColor = Color(0xFF3B82F6)
+    val greenColor = Color(0xFF10B981)
+    val redColor = Color(0xFFEF4444)
+
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(
+                navController = navController,
+                currentRoute = currentRoute
+            )
+        }
+    ) { paddingValues ->
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
         ) {
-            // Header
-            Text(
-                text = "Expenses",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Average Expenses Card
-            AverageExpensesCard(
-                totalExpenses = viewModel.totalExpenses,
-                monthlyExpenses = viewModel.monthlyExpenses,
-                yearlyExpenses = viewModel.yearlyExpenses
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Expenses Grid Section Header with Add Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .windowInsetsPadding(WindowInsets.captionBar)
+                    .verticalScroll(scrollState)
+                    .padding(16.dp)
             ) {
+                // Header
                 Text(
-                    text = "My Expenses",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    text = "Expenses",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
 
-                IconButton(
-                    onClick = { showAddExpenseDialog = true },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Average Expenses Card
+                AverageExpensesCard(
+                    totalExpenses = viewModel.totalExpenses,
+                    monthlyExpenses = viewModel.monthlyExpenses,
+                    yearlyExpenses = viewModel.yearlyExpenses
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Expenses Grid Section Header with Add Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Expense",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
+                    Text(
+                        text = "My Expenses",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
-                }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Loading State
-            if (viewModel.isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+                    IconButton(
+                        onClick = { showAddExpenseDialog = true },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(blueColor)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Expense",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
-            } else {
-                // Expenses Grid (2x2 for now)
-                ExpensesGrid(expenses = viewModel.expenses)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Loading State
+                if (viewModel.isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    // Expenses Grid (2x2 for now)
+                    ExpensesGrid(expenses = viewModel.expenses)
+                }
             }
         }
-    }
 
-    // Add Expense Dialog
-    if (showAddExpenseDialog) {
-        AddExpenseDialog(
-            onDismiss = { showAddExpenseDialog = false },
-            onConfirm = { name, amount, dueDate, imageUrl, tags ->
-                viewModel.addExpense(
-                    name = name,
-                    amount = amount,
-                    dueDate = dueDate,
-                    imageUrl = imageUrl,
-                    tags = tags,
-                    onSuccess = { showAddExpenseDialog = false },
-                    onError = { /* TODO: Show error message */ }
-                )
-            }
-        )
+        // Add Expense Dialog
+        if (showAddExpenseDialog) {
+            AddExpenseDialog(
+                onDismiss = { showAddExpenseDialog = false },
+                onConfirm = { name, amount, dueDate, imageUrl, tags ->
+                    viewModel.addExpense(
+                        name = name,
+                        amount = amount,
+                        dueDate = dueDate,
+                        imageUrl = imageUrl,
+                        tags = tags,
+                        onSuccess = { showAddExpenseDialog = false },
+                        onError = { /* TODO: Show error message */ }
+                    )
+                }
+            )
+        }
     }
 }
 
@@ -183,10 +207,9 @@ fun AverageExpensesCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(
@@ -198,7 +221,7 @@ fun AverageExpensesCard(
                 text = "Average Expenses",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -240,17 +263,17 @@ fun ExpenseMetricItem(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = String.format("$%.2f", amount),
+            text = String.format(java.util.Locale.US, "$%.2f", amount),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
         )
     }
@@ -310,12 +333,10 @@ fun ExpenseCard(
 ) {
     Card(
         modifier = modifier.clickable { /* TODO: Navigate to expense details */ },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(12.dp)
@@ -335,10 +356,10 @@ fun ExpenseCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = String.format("$%.2f", expense.amount),
-                style = MaterialTheme.typography.bodyLarge,
+                text = String.format(java.util.Locale.US, "$%.2f", expense.amount),
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
