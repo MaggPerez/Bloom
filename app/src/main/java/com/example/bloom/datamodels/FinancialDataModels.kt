@@ -156,3 +156,16 @@ data class TransactionFilter(
                 !searchQuery.isNullOrBlank()
     }
 }
+
+@Serializable
+data class ExpenseData(
+    val id: String? = null,
+    val user_id: String,
+    val name: String,
+    val amount: Double,
+    val due_date: String, // Format: yyyy-MM-dd
+    val image_url: String? = null,
+    val tags: String? = null, // Comma-separated tags
+    val created_at: String? = null,
+    val updated_at: String? = null
+)
