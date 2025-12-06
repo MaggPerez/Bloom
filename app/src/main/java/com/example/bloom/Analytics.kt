@@ -85,8 +85,17 @@ fun AnalyticsScreen(
         if (viewModel.monthlyTrends.isNotEmpty()) {
             modelProducer.runTransaction {
                 lineSeries {
-                    series(*viewModel.monthlyTrends.map { it.totalIncome }.toTypedArray())
-                    series(*viewModel.monthlyTrends.map { it.totalExpenses }.toTypedArray())
+                    val income = viewModel.monthlyTrends.map { it.totalIncome }
+                    val expenses = viewModel.monthlyTrends.map { it.totalExpenses }
+
+                    if (income.size == 1) {
+                        // Pad with a starting zero point for single-month data to ensure a line is drawn
+                        series(0.0, income.first())
+                        series(0.0, expenses.first())
+                    } else {
+                        series(*income.toTypedArray())
+                        series(*expenses.toTypedArray())
+                    }
                 }
             }
         }
