@@ -220,10 +220,10 @@ class AnalyticsController {
                 .select() {
                     filter {
                         eq("user_id", userId)
-                        not("recurring_frequency", "is", null)
                     }
                 }
                 .decodeList<ExpenseData>()
+                .filter { !it.recurring_frequency.isNullOrBlank() }
 
             val today = LocalDate.now()
             val upcomingBills = response.map { expense ->
@@ -349,7 +349,7 @@ class AnalyticsController {
                         gte("transaction_date", startDate)
                         lte("transaction_date", endDate)
                     }
-                    order("amount", ascending = false)
+                    order(column = "amount", order = io.github.jan.supabase.postgrest.query.Order.DESCENDING)
                     limit(1)
                 }
                 .decodeList<JsonObject>()
