@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
@@ -36,6 +37,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -179,6 +181,47 @@ fun HealthScoreScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     RecommendationsCard(recommendations = viewModel.recommendations)
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // AI Recommendations
+                    Text(
+                        text = "AI-Powered Recommendations",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    viewModel.aiRecommendations?.let { aiText ->
+                        AIRecommendationsCard(recommendations = aiText)
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    OutlinedButton(
+                        onClick = { viewModel.generateAIRecommendations() },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !viewModel.isLoadingAI,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        if (viewModel.isLoadingAI) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                            Text("Generating...")
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Build,
+                                contentDescription = "Generate",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                            Text(if (viewModel.aiRecommendations == null) "Generate AI Recommendations" else "Regenerate AI Recommendations")
+                        }
+                    }
                 }
 
                 // Error message
@@ -489,6 +532,49 @@ fun RecommendationItem(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
+    }
+}
+
+@Composable
+fun AIRecommendationsCard(
+    recommendations: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF8B5CF6).copy(alpha = 0.1f)),
+        border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.3f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Build,
+                    contentDescription = "AI",
+                    tint = Color(0xFF8B5CF6),
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                Text(
+                    text = "AI Analysis",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF8B5CF6)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = recommendations,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 

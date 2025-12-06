@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bloom.controllers.BudgetController
 import com.example.bloom.controllers.TransactionController
+import com.example.bloom.controllers.BloomAIController
 import kotlinx.coroutines.launch
 import kotlin.math.min
 
@@ -14,6 +15,7 @@ class HealthScoreViewModel : ViewModel() {
 
     private val budgetController = BudgetController()
     private val transactionController = TransactionController()
+    private val aiController = BloomAIController()
 
     // =====================================================
     // STATE VARIABLES
@@ -57,6 +59,13 @@ class HealthScoreViewModel : ViewModel() {
 
     // Recommendations
     var recommendations by mutableStateOf<List<String>>(emptyList())
+        private set
+
+    // AI-powered recommendations
+    var aiRecommendations by mutableStateOf<String?>(null)
+        private set
+
+    var isLoadingAI by mutableStateOf(false)
         private set
 
     // Loading and error states
@@ -359,5 +368,70 @@ class HealthScoreViewModel : ViewModel() {
      */
     fun clearError() {
         errorMessage = null
+    }
+
+    /**
+     * Generate AI-powered recommendations based on health score
+     */
+    fun generateAIRecommendations() {
+        viewModelScope.launch {
+            isLoadingAI = true
+            errorMessage = null
+
+            try {
+                // Build comprehensive health score summary for AI
+                val summary = buildHealthScoreSummary()
+
+                // Call AI endpoint
+                aiController.generateInsights(summary).fold(
+                    onSuccess = { response ->
+                        aiRecommendations = response
+                    },
+                    onFailure = { e ->
+                        errorMessage = "Failed to generate AI recommendations: ${e.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                errorMessage = "Failed to generate AI recommendations: ${e.message}"
+            } finally {
+                isLoadingAI = false
+            }
+        }
+    }
+
+    /**
+     * Build health score summary for AI analysis
+     */
+    private fun buildHealthScoreSummary(): String {
+        return buildString {
+            appendLine("Financial Health Score Analysis:")
+            appendLine("Overall Score: $healthScore/100 ($scoreRating)")
+            appendLine()
+            appendLine("Score Breakdown:")
+            appendLine("- Budget Adherence: $budgetAdherenceScore/40")
+            appendLine("- Savings Rate: $savingsRateScore/30")
+            appendLine("- Spending Consistency: $spendingConsistencyScore/20")
+            appendLine("- Emergency Fund: $emergencyFundScore/10")
+            appendLine()
+            appendLine("Financial Details:")
+            appendLine("- Monthly Budget: $${"%.2f".format(monthlyBudget)}")
+            appendLine("- Total Spent: $${"%.2f".format(totalSpent)}")
+            appendLine("- Remaining: $${"%.2f".format(monthlyBudget - totalSpent)}")
+            appendLine("- Savings Goal: $${"%.2f".format(savingsGoal)}")
+            appendLine("- Current Savings: $${"%.2f".format(currentSavings)}")
+            if (monthlyIncome > 0) {
+                appendLine("- Monthly Income: $${"%.2f".format(monthlyIncome)}")
+                val savingsRate = ((monthlyIncome - totalSpent) / monthlyIncome * 100)
+                appendLine("- Savings Rate: ${"%.1f".format(savingsRate)}%")
+            }
+            if (averageMonthlyExpense > 0) {
+                val emergencyFundMonths = currentSavings / averageMonthlyExpense
+                appendLine("- Emergency Fund Coverage: ${"%.1f".format(emergencyFundMonths)} months")
+            }
+            appendLine()
+            appendLine("Based on this financial health score, provide 4-5 specific, actionable recommendations")
+            appendLine("to improve my financial wellness. Focus on the lowest-scoring areas and provide")
+            appendLine("concrete steps I can take. Be encouraging and supportive while being honest.")
+        }
     }
 }
