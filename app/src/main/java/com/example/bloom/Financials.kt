@@ -112,6 +112,17 @@ fun FinancialsScreen(
                     color = Color(0xFFEF4444), // red
                     onClick = { navController.navigate("expenses_screen") }
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+
+                FinancialCard(
+                    title = "Analytics",
+                    description = "Analyze your financial data and trends",
+                    icon = Icons.Default.PieChart,
+                    color = Color(0xFFF59E0B), // Yellow/Orange
+                    onClick = { navController.navigate("analytics_screen") }
+                )
             }
         }
     }

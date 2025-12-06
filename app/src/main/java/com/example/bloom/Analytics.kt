@@ -1,2 +1,34 @@
 package com.example.bloom
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+
+@Composable
+fun AnalyticsScreen(
+    navController: NavController,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxSize()
+    ) {
+        Column() {
+            Text("Analytics Screen")
+        }
+    }
+
+}
+
+
+
+@Preview (showBackground = true)
+@Composable
+fun AnalyticsScreenPreview() {
+    AnalyticsScreen(navController = rememberNavController())
+}
