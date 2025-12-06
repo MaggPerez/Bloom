@@ -50,6 +50,8 @@ android {
     }
 }
 
+
+
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -118,5 +120,12 @@ dependencies {
 
     // iText PDF generation for analytics reports
     implementation("com.itextpdf:itextpdf:5.5.13.3")
+
+    //todo test out vico chart library for compose
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m2)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.multiplatform)
+    implementation(libs.vico.views)
 
 }
