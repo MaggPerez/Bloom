@@ -410,4 +410,82 @@ class TransactionController {
             Result.failure(e)
         }
     }
+
+    // =====================================================
+    // FINANCIAL ANALYTICS
+    // =====================================================
+
+    /**
+     * Get total income for current month
+     */
+    suspend fun getMonthlyIncome(): Result<Double> {
+        return try {
+            val userId = getUserId() ?: return Result.failure(Exception("User not authenticated"))
+            val currentDate = LocalDate.now()
+            val month = currentDate.monthValue
+            val year = currentDate.year
+
+            // Get first and last day of current month
+            val firstDay = LocalDate.of(year, month, 1).toString()
+            val lastDay = LocalDate.of(year, month, currentDate.lengthOfMonth()).toString()
+
+            val response = supabase.from("transactions")
+                .select(columns = Columns.raw("amount")) {
+                    filter {
+                        eq("user_id", userId)
+                        eq("transaction_type", "income")
+                        gte("transaction_date", firstDay)
+                        lte("transaction_date", lastDay)
+                    }
+                }
+
+            val transactions = response.decodeList<JsonObject>()
+            val totalIncome = transactions.sumOf {
+                it["amount"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
+            }
+
+            Result.success(totalIncome)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get average monthly expenses over last 3 months
+     */
+    suspend fun getAverageMonthlyExpenses(): Result<Double> {
+        return try {
+            val userId = getUserId() ?: return Result.failure(Exception("User not authenticated"))
+            val currentDate = LocalDate.now()
+
+            // Get date from 3 months ago
+            val threeMonthsAgo = currentDate.minusMonths(3).toString()
+
+            val response = supabase.from("transactions")
+                .select(columns = Columns.raw("amount, transaction_date")) {
+                    filter {
+                        eq("user_id", userId)
+                        eq("transaction_type", "expense")
+                        gte("transaction_date", threeMonthsAgo)
+                    }
+                }
+
+            val transactions = response.decodeList<JsonObject>()
+
+            if (transactions.isEmpty()) {
+                return Result.success(0.0)
+            }
+
+            val totalExpenses = transactions.sumOf {
+                it["amount"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
+            }
+
+            // Calculate average over 3 months
+            val averageMonthly = totalExpenses / 3.0
+
+            Result.success(averageMonthly)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

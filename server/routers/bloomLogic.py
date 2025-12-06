@@ -177,10 +177,44 @@ async def chat(request: ChatRequest):
         return {"message": response.text}
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Gemini chat call failed: {e}")
-    
-    
-    
-    
+
+
+@router.post("/insights")
+async def generate_insights(request: ChatRequest):
+    """Generate AI-powered financial insights from a user's financial summary.
+
+    Takes a summary of the user's financial data (income, expenses, spending patterns)
+    and returns personalized insights and recommendations.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured")
+
+    client = genai.Client(api_key=api_key)
+
+    system_instruction = (
+        "SYSTEM: You are a Financial Insights Advisor for college students and low-income individuals."
+        " Your goal is to provide personalized, actionable insights based on the user's spending patterns."
+        " Analyze the financial summary provided and give 3-4 specific insights or recommendations."
+        " Focus on: spending patterns, budget optimization, savings opportunities, and financial health."
+        " Be encouraging and supportive while being honest about areas for improvement."
+        " Keep your response concise and actionable. Format with bullet points or numbered lists."
+    )
+
+    full_prompt = f"{system_instruction}\n\n{request.message}"
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=full_prompt
+        )
+        return {"message": response.text}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Gemini insights call failed: {e}")
+
+
+
+
 # @router.get("/geminiResponse")
 # async def geminiResponse():
 #     client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
