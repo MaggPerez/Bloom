@@ -99,13 +99,7 @@ class HealthScoreViewModel : ViewModel() {
             else -> 0xFFEF4444 // Red
         }
 
-    // =====================================================
-    // INITIALIZATION
-    // =====================================================
 
-    init {
-        calculateHealthScore()
-    }
 
     // =====================================================
     // HEALTH SCORE CALCULATION
@@ -376,7 +370,7 @@ class HealthScoreViewModel : ViewModel() {
     }
 
     /**
-     * Generate AI-powered health score and recommendations
+     * Generate AI-powered health score and recommendations based on raw financial data
      */
     fun generateAIHealthScore() {
         viewModelScope.launch {
@@ -384,25 +378,44 @@ class HealthScoreViewModel : ViewModel() {
             errorMessage = null
 
             try {
-                // Build comprehensive health score summary for AI
-                val data = buildHealthScoreSummary()
-                Log.d("HealthScoreViewModel", "Sending data to AI: $data")
+                // Ensure we have the latest summary data
+                loadFinancialData()
+
+                // Fetch recent transactions for context
+                val transactionsResult = transactionController.fetchTransactions(page = 0, pageSize = 20)
+                val transactions = transactionsResult.getOrNull() ?: emptyList()
+
+                // Build comprehensive raw data summary for AI
+                val data = buildRawFinancialDataSummary(transactions)
+                Log.d("HealthScoreViewModel", "Sending raw data to AI: $data")
 
                 // Call AI endpoint
                 aiController.generateHealthScore(data).fold(
                     onSuccess = { response ->
-                        Log.d("HealthScoreViewModel", "AI Response received - Score: ${response.score}, Recommendations: ${response.recommendations}")
+                        Log.d("HealthScoreViewModel", "AI Response received - Score: ${response.score}")
 
                         // Update AI health score
                         aiHealthScore = response.score
 
-                        // Update health score to display AI score
+                        // Update main health score with AI's calculation
                         healthScore = response.score
+
+                        // Update breakdown scores from AI response
+                        budgetAdherenceScore = response.budgetAdherenceScore
+                        savingsRateScore = response.savingsRateScore
+                        spendingConsistencyScore = response.spendingConsistencyScore
+                        emergencyFundScore = response.emergencyFundScore
 
                         // Update recommendations
                         if (response.recommendations.isNotEmpty()) {
+                            // Split recommendations string into a list if it's bulleted, or just wrap it
+                            // For now, we'll store the raw text for the AI card, and parse for the list card if needed
                             aiRecommendations = response.recommendations
-                            Log.d("HealthScoreViewModel", "AI health score and recommendations updated successfully")
+                            
+                            // Optionally parse the AI recommendations into the main list
+                            recommendations = parseRecommendationsToList(response.recommendations)
+                            
+                            Log.d("HealthScoreViewModel", "AI health score and breakdown updated successfully")
                         } else {
                             errorMessage = "AI returned empty recommendations"
                             Log.e("HealthScoreViewModel", "AI returned empty recommendations")
@@ -423,38 +436,38 @@ class HealthScoreViewModel : ViewModel() {
     }
 
     /**
-     * Build health score summary for AI analysis
+     * Build raw financial data summary for AI analysis
      */
-    private fun buildHealthScoreSummary(): String {
+    private fun buildRawFinancialDataSummary(transactions: List<com.example.bloom.datamodels.TransactionWithCategory>): String {
         return buildString {
-            appendLine("Financial Health Score Analysis:")
-            appendLine("Overall Score: $healthScore/100 ($scoreRating)")
-            appendLine()
-            appendLine("Score Breakdown:")
-            appendLine("- Budget Adherence: $budgetAdherenceScore/40")
-            appendLine("- Savings Rate: $savingsRateScore/30")
-            appendLine("- Spending Consistency: $spendingConsistencyScore/20")
-            appendLine("- Emergency Fund: $emergencyFundScore/10")
-            appendLine()
-            appendLine("Financial Details:")
-            appendLine("- Monthly Budget: $${"%.2f".format(monthlyBudget)}")
-            appendLine("- Total Spent: $${"%.2f".format(totalSpent)}")
-            appendLine("- Remaining: $${"%.2f".format(monthlyBudget - totalSpent)}")
+            appendLine("Raw Financial Data for Health Score Calculation:")
+            appendLine("Budget & Goals:")
+            appendLine("- Monthly Budget Limit: $${"%.2f".format(monthlyBudget)}")
             appendLine("- Savings Goal: $${"%.2f".format(savingsGoal)}")
             appendLine("- Current Savings: $${"%.2f".format(currentSavings)}")
-            if (monthlyIncome > 0) {
-                appendLine("- Monthly Income: $${"%.2f".format(monthlyIncome)}")
-                val savingsRate = ((monthlyIncome - totalSpent) / monthlyIncome * 100)
-                appendLine("- Savings Rate: ${"%.1f".format(savingsRate)}%")
-            }
-            if (averageMonthlyExpense > 0) {
-                val emergencyFundMonths = currentSavings / averageMonthlyExpense
-                appendLine("- Emergency Fund Coverage: ${"%.1f".format(emergencyFundMonths)} months")
+            appendLine()
+            appendLine("Income & Spending:")
+            appendLine("- Monthly Income: $${"%.2f".format(monthlyIncome)}")
+            appendLine("- Total Spent This Month: $${"%.2f".format(totalSpent)}")
+            appendLine("- Average Monthly Expense (3-month avg): $${"%.2f".format(averageMonthlyExpense)}")
+            appendLine()
+            appendLine("Recent Transactions (Last 20):")
+            if (transactions.isEmpty()) {
+                appendLine("- No recent transactions found.")
+            } else {
+                transactions.forEach { txn ->
+                    appendLine("- ${txn.transactionDate}: ${txn.description} (${txn.categoryName}) - $${"%.2f".format(txn.amount)} [${txn.transactionType}]")
+                }
             }
             appendLine()
-            appendLine("Based on this financial health score, provide 4-5 specific, actionable recommendations")
-            appendLine("to improve my financial wellness. Focus on the lowest-scoring areas and provide")
-            appendLine("concrete steps I can take. Be encouraging and supportive while being honest.")
+            appendLine("Please analyze this raw data to calculate the financial health score and provide recommendations.")
         }
+    }
+
+    private fun parseRecommendationsToList(text: String): List<String> {
+        return text.split("\n")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && (it.first().isDigit() || it.startsWith("-") || it.startsWith("•")) }
+            .map { it.replaceFirst(Regex("^\\d+\\.\\s*|[-•]\\s*"), "") }
     }
 }

@@ -27,6 +27,10 @@ class AIFeatureDataModel {
 
     data class AIHealthScoreResponse(
         val score: Int,
+        val budgetAdherenceScore: Int = 0,
+        val savingsRateScore: Int = 0,
+        val spendingConsistencyScore: Int = 0,
+        val emergencyFundScore: Int = 0,
         val recommendations: String,
         val message: String
     )

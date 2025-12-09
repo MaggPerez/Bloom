@@ -218,7 +218,7 @@ async def healthScore(request: ChatRequest):
     """Evaluate the user's financial health score based on their financial summary.
 
     Provides a score out of 100 along with brief reasoning and 4-5 actionable recommendations.
-    Returns structured JSON with score and recommendations.
+    Returns structured JSON with score, breakdown, and recommendations.
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -227,19 +227,30 @@ async def healthScore(request: ChatRequest):
     client = genai.Client(api_key=api_key)
 
     system_instruction = (
-        "SYSTEM: You are a Financial Health Evaluator for college students and low-income individuals."
-        " Based on the user's financial summary, you MUST respond in EXACTLY this format:\n\n"
-        "SCORE: [number from 0-100]\n"
+        "SYSTEM: You are a Financial Health Evaluator. You will receive raw financial data "
+        "(budget, transactions, expenses, savings). You must analyze this data and CALCULATE "
+        "a financial health score (0-100) and a score breakdown.\n\n"
+        "SCORING CRITERIA (Total 100):\n"
+        "1. Budget Adherence (Max 40): Do they stay within budget?\n"
+        "2. Savings Rate (Max 30): Are they saving money? (Income vs Expense)\n"
+        "3. Spending Consistency (Max 20): Is spending predictable?\n"
+        "4. Emergency Fund (Max 10): Do they have savings buffer?\n\n"
+        "You MUST respond in EXACTLY this format:\n\n"
+        "SCORE: [number]\n"
+        "BREAKDOWN:\n"
+        "Budget Adherence: [number]\n"
+        "Savings Rate: [number]\n"
+        "Spending Consistency: [number]\n"
+        "Emergency Fund: [number]\n"
         "RECOMMENDATIONS:\n"
-        "1. [First specific, actionable recommendation]\n"
-        "2. [Second specific, actionable recommendation]\n"
-        "3. [Third specific, actionable recommendation]\n"
-        "4. [Fourth specific, actionable recommendation]\n\n"
-        "Focus on the lowest-scoring areas. Be encouraging and supportive while being honest."
-        " Provide concrete steps they can take. DO NOT deviate from this format."
+        "1. [First recommendation]\n"
+        "2. [Second recommendation]\n"
+        "3. [Third recommendation]\n"
+        "4. [Fourth recommendation]\n\n"
+        "Be strict with the format. No markdown."
     )
 
-    full_prompt = f"{system_instruction}\n\n{request.message}"
+    full_prompt = f"{system_instruction}\n\nUSER DATA:\n{request.message}"
 
     try:
         response = client.models.generate_content(
@@ -249,28 +260,57 @@ async def healthScore(request: ChatRequest):
         response_text = response.text
         print("Health Score Response:", response_text)
 
-        # Parse the response to extract score and recommendations
+        # Parse the response
         score = 0
+        budget_score = 0
+        savings_score = 0
+        consistency_score = 0
+        emergency_score = 0
         recommendations = ""
 
         lines = response_text.strip().split('\n')
-        for i, line in enumerate(lines):
+        current_section = None
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
             if line.startswith("SCORE:"):
-                # Extract numeric score
-                score_str = line.replace("SCORE:", "").strip()
                 try:
-                    score = int(''.join(filter(str.isdigit, score_str)))
-                except:
-                    score = 0
+                    score = int(''.join(filter(str.isdigit, line.split(":")[1])))
+                except: pass
+            elif line.startswith("BREAKDOWN:"):
+                current_section = "BREAKDOWN"
             elif line.startswith("RECOMMENDATIONS:"):
-                # Get everything after "RECOMMENDATIONS:"
-                recommendations = '\n'.join(lines[i+1:]).strip()
-                break
+                current_section = "RECOMMENDATIONS"
+                continue # Skip the header line
+
+            if current_section == "BREAKDOWN":
+                if "Budget Adherence:" in line:
+                    try: budget_score = int(''.join(filter(str.isdigit, line.split(":")[1])))
+                    except: pass
+                elif "Savings Rate:" in line:
+                    try: savings_score = int(''.join(filter(str.isdigit, line.split(":")[1])))
+                    except: pass
+                elif "Spending Consistency:" in line:
+                    try: consistency_score = int(''.join(filter(str.isdigit, line.split(":")[1])))
+                    except: pass
+                elif "Emergency Fund:" in line:
+                    try: emergency_score = int(''.join(filter(str.isdigit, line.split(":")[1])))
+                    except: pass
+            
+            elif current_section == "RECOMMENDATIONS":
+                recommendations += line + "\n"
 
         return {
             "score": score,
-            "recommendations": recommendations,
-            "message": response_text  # Keep full message for backward compatibility
+            "budgetAdherenceScore": budget_score,
+            "savingsRateScore": savings_score,
+            "spendingConsistencyScore": consistency_score,
+            "emergencyFundScore": emergency_score,
+            "recommendations": recommendations.strip(),
+            "message": response_text
         }
     except Exception as e:
         print(f"Error in healthScore: {e}")
