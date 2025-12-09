@@ -119,4 +119,7 @@ dependencies {
     // iText PDF generation for analytics reports
     implementation("com.itextpdf:itextpdf:5.5.13.3")
 
+    //MPAndroidChart
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
 }
