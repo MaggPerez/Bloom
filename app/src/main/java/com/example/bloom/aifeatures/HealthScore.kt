@@ -203,9 +203,9 @@ fun HealthScoreScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Recommendations
+                    // A.I - Powered Recommendations
                     Text(
-                        text = "Recommendations",
+                        text = "AI-Powered Recommendations",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -215,21 +215,6 @@ fun HealthScoreScreen(
 
                     RecommendationsCard(recommendations = viewModel.recommendations)
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // AI Recommendations
-                    viewModel.aiRecommendations?.let { aiText ->
-                        Text(
-                            text = "AI-Powered Recommendations",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        AIRecommendationsCard(recommendations = aiText)
-                    }
                 }
 
                 // Error message
@@ -572,48 +557,8 @@ fun RecommendationItem(
     }
 }
 
-@Composable
-fun AIRecommendationsCard(
-    recommendations: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF8B5CF6).copy(alpha = 0.1f)),
-        border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.3f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Build,
-                    contentDescription = "AI",
-                    tint = Color(0xFF8B5CF6),
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                Text(
-                    text = "AI Analysis",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF8B5CF6)
-                )
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = recommendations,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
