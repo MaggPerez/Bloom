@@ -21,6 +21,8 @@ interface RetrofitAPI {
     @POST("chat")
     suspend fun chat(@Body request: AIFeatureDataModel.ChatRequest): AIFeatureDataModel.AIGenerativeDataModel
 
+    @POST("insights")
+    suspend fun generateInsights(@Body request: AIFeatureDataModel.ChatRequest): AIFeatureDataModel.AIGenerativeDataModel
 
     @GET("getGeminiResponse")
     suspend fun getGeminiResponse(): AIFeatureDataModel.AIGenerativeDataModel

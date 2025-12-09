@@ -61,7 +61,8 @@ class AIFeatureDataModel {
                 description = "Discover patterns in your spending and get actionable recommendations",
                 icon = Icons.Default.Search,
                 color = aiPurple,
-                actionType = AIFeatureDataModel.AIActionType.NAVIGATE_TO_SCREEN
+                actionType = AIFeatureDataModel.AIActionType.NAVIGATE_TO_SCREEN,
+                route = "smart_insights_screen"
             ),
             AIFeature(
                 title = "CSV Import",
@@ -75,7 +76,8 @@ class AIFeatureDataModel {
                 description = "See your overall financial wellness score and how to improve it",
                 icon = Icons.Default.FavoriteBorder,
                 color = aiPurple,
-                actionType = AIActionType.SHOW_BOTTOM_SHEET
+                actionType = AIActionType.NAVIGATE_TO_SCREEN,
+                route = "health_score_screen"
             ),
             AIFeature(
                 title = "What-If Scenarios",
@@ -89,7 +91,8 @@ class AIFeatureDataModel {
                 description = "AI detects recurring bills and alerts you before they're due",
                 icon = Icons.Default.DateRange,
                 color = aiPurple,
-                actionType = AIActionType.SHOW_BOTTOM_SHEET
+                actionType = AIActionType.NAVIGATE_TO_SCREEN,
+                route = "health_score_screen"
             )
         )
     }

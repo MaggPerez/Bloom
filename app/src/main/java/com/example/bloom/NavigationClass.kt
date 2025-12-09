@@ -87,10 +87,13 @@ fun Navigation() {
             ExpensesScreen(navController)
         }
 
-        composable("analytics_screen") {
-            AnalyticsScreen(navController)
+        composable("health_score_screen") {
+            com.example.bloom.aifeatures.HealthScoreScreen(navController)
         }
 
+        composable("smart_insights_screen") {
+            com.example.bloom.aifeatures.SmartInsightsScreen(navController)
+        }
 
     }
 }
