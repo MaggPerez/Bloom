@@ -25,6 +25,12 @@ class AIFeatureDataModel {
         val message: String
     )
 
+    data class AIHealthScoreResponse(
+        val score: Int,
+        val recommendations: String,
+        val message: String
+    )
+
     data class ChatRequest(
         val message: String
     )

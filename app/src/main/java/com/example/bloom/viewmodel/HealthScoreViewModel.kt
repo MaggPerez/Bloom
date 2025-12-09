@@ -1,5 +1,6 @@
 package com.example.bloom.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -23,6 +24,10 @@ class HealthScoreViewModel : ViewModel() {
 
     // Overall score (0-100)
     var healthScore by mutableStateOf(0)
+        private set
+
+    // AI-generated health score
+    var aiHealthScore by mutableStateOf<Int?>(null)
         private set
 
     // Score breakdown
@@ -371,28 +376,46 @@ class HealthScoreViewModel : ViewModel() {
     }
 
     /**
-     * Generate AI-powered recommendations based on health score
+     * Generate AI-powered health score and recommendations
      */
-    fun generateAIRecommendations() {
+    fun generateAIHealthScore() {
         viewModelScope.launch {
             isLoadingAI = true
             errorMessage = null
 
             try {
                 // Build comprehensive health score summary for AI
-                val summary = buildHealthScoreSummary()
+                val data = buildHealthScoreSummary()
+                Log.d("HealthScoreViewModel", "Sending data to AI: $data")
 
                 // Call AI endpoint
-                aiController.generateInsights(summary).fold(
+                aiController.generateHealthScore(data).fold(
                     onSuccess = { response ->
-                        aiRecommendations = response
+                        Log.d("HealthScoreViewModel", "AI Response received - Score: ${response.score}, Recommendations: ${response.recommendations}")
+
+                        // Update AI health score
+                        aiHealthScore = response.score
+
+                        // Update health score to display AI score
+                        healthScore = response.score
+
+                        // Update recommendations
+                        if (response.recommendations.isNotEmpty()) {
+                            aiRecommendations = response.recommendations
+                            Log.d("HealthScoreViewModel", "AI health score and recommendations updated successfully")
+                        } else {
+                            errorMessage = "AI returned empty recommendations"
+                            Log.e("HealthScoreViewModel", "AI returned empty recommendations")
+                        }
                     },
                     onFailure = { e ->
-                        errorMessage = "Failed to generate AI recommendations: ${e.message}"
+                        errorMessage = "Failed to generate AI health score: ${e.message}"
+                        Log.e("HealthScoreViewModel", "AI call failed", e)
                     }
                 )
             } catch (e: Exception) {
-                errorMessage = "Failed to generate AI recommendations: ${e.message}"
+                errorMessage = "Failed to generate AI health score: ${e.message}"
+                Log.e("HealthScoreViewModel", "Exception in generateAIHealthScore", e)
             } finally {
                 isLoadingAI = false
             }

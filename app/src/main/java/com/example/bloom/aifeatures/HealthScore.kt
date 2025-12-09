@@ -146,8 +146,41 @@ fun HealthScoreScreen(
                     HealthScoreGaugeCard(
                         score = viewModel.healthScore,
                         rating = viewModel.scoreRating,
-                        scoreColor = Color(viewModel.scoreColor)
+                        scoreColor = Color(viewModel.scoreColor),
+                        isLoadingAI = viewModel.isLoadingAI
                     )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // AI Generation Button
+                    Button(
+                        onClick = { viewModel.generateAIHealthScore() },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !viewModel.isLoadingAI,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF8B5CF6),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        if (viewModel.isLoadingAI) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                            Text("Generating AI Analysis...")
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Build,
+                                contentDescription = "Generate AI Analysis",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                            Text(if (viewModel.aiRecommendations == null) "Generate AI Health Analysis" else "Regenerate AI Analysis")
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -185,42 +218,17 @@ fun HealthScoreScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // AI Recommendations
-                    Text(
-                        text = "AI-Powered Recommendations",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     viewModel.aiRecommendations?.let { aiText ->
-                        AIRecommendationsCard(recommendations = aiText)
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
+                        Text(
+                            text = "AI-Powered Recommendations",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
 
-                    OutlinedButton(
-                        onClick = { viewModel.generateAIRecommendations() },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !viewModel.isLoadingAI,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        if (viewModel.isLoadingAI) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                            Text("Generating...")
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Build,
-                                contentDescription = "Generate",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                            Text(if (viewModel.aiRecommendations == null) "Generate AI Recommendations" else "Regenerate AI Recommendations")
-                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        AIRecommendationsCard(recommendations = aiText)
                     }
                 }
 
@@ -243,6 +251,7 @@ fun HealthScoreGaugeCard(
     score: Int,
     rating: String,
     scoreColor: Color,
+    isLoadingAI: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -265,7 +274,7 @@ fun HealthScoreGaugeCard(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Circular gauge
+            // Circular gauge with loading overlay
             Box(contentAlignment = Alignment.Center) {
                 CircularHealthGauge(
                     percentage = score.toFloat(),
@@ -273,18 +282,46 @@ fun HealthScoreGaugeCard(
                     modifier = Modifier.size(200.dp)
                 )
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "$score",
-                        style = MaterialTheme.typography.displayLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = scoreColor
-                    )
-                    Text(
-                        text = "out of 100",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
+                if (isLoadingAI) {
+                    // Loading overlay
+                    Box(
+                        modifier = Modifier
+                            .size(200.dp)
+                            .background(
+                                MaterialTheme.colorScheme.background.copy(alpha = 0.8f),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
+                                color = Color(0xFF8B5CF6),
+                                strokeWidth = 4.dp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Analyzing...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFF8B5CF6),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "$score",
+                            style = MaterialTheme.typography.displayLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = scoreColor
+                        )
+                        Text(
+                            text = "out of 100",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
                 }
             }
 
@@ -298,7 +335,7 @@ fun HealthScoreGaugeCard(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = rating,
+                    text = if (isLoadingAI) "Calculating..." else rating,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = scoreColor

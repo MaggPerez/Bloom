@@ -24,6 +24,9 @@ interface RetrofitAPI {
     @POST("insights")
     suspend fun generateInsights(@Body request: AIFeatureDataModel.ChatRequest): AIFeatureDataModel.AIGenerativeDataModel
 
+    @POST("healthScore")
+    suspend fun calculateHealthScore(@Body request: AIFeatureDataModel.ChatRequest): AIFeatureDataModel.AIHealthScoreResponse
+
     @GET("getGeminiResponse")
     suspend fun getGeminiResponse(): AIFeatureDataModel.AIGenerativeDataModel
 }

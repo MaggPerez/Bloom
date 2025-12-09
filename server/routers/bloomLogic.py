@@ -213,6 +213,68 @@ async def generate_insights(request: ChatRequest):
         raise HTTPException(status_code=502, detail=f"Gemini insights call failed: {e}")
 
 
+@router.post("/healthScore")
+async def healthScore(request: ChatRequest):
+    """Evaluate the user's financial health score based on their financial summary.
+
+    Provides a score out of 100 along with brief reasoning and 4-5 actionable recommendations.
+    Returns structured JSON with score and recommendations.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured")
+
+    client = genai.Client(api_key=api_key)
+
+    system_instruction = (
+        "SYSTEM: You are a Financial Health Evaluator for college students and low-income individuals."
+        " Based on the user's financial summary, you MUST respond in EXACTLY this format:\n\n"
+        "SCORE: [number from 0-100]\n"
+        "RECOMMENDATIONS:\n"
+        "1. [First specific, actionable recommendation]\n"
+        "2. [Second specific, actionable recommendation]\n"
+        "3. [Third specific, actionable recommendation]\n"
+        "4. [Fourth specific, actionable recommendation]\n\n"
+        "Focus on the lowest-scoring areas. Be encouraging and supportive while being honest."
+        " Provide concrete steps they can take. DO NOT deviate from this format."
+    )
+
+    full_prompt = f"{system_instruction}\n\n{request.message}"
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=full_prompt
+        )
+        response_text = response.text
+        print("Health Score Response:", response_text)
+
+        # Parse the response to extract score and recommendations
+        score = 0
+        recommendations = ""
+
+        lines = response_text.strip().split('\n')
+        for i, line in enumerate(lines):
+            if line.startswith("SCORE:"):
+                # Extract numeric score
+                score_str = line.replace("SCORE:", "").strip()
+                try:
+                    score = int(''.join(filter(str.isdigit, score_str)))
+                except:
+                    score = 0
+            elif line.startswith("RECOMMENDATIONS:"):
+                # Get everything after "RECOMMENDATIONS:"
+                recommendations = '\n'.join(lines[i+1:]).strip()
+                break
+
+        return {
+            "score": score,
+            "recommendations": recommendations,
+            "message": response_text  # Keep full message for backward compatibility
+        }
+    except Exception as e:
+        print(f"Error in healthScore: {e}")
+        raise HTTPException(status_code=502, detail=f"Gemini health score call failed: {e}")
 
 
 # @router.get("/geminiResponse")
