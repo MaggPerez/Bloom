@@ -52,7 +52,14 @@ fun AnalyticsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Analytics") },
+                title = {
+                    Text(
+                        text = "Analytics",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
                 actions = {
                     IconButton(onClick = { viewModel.refreshAnalytics() }) {
                         Icon(
