@@ -282,7 +282,7 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     QuickActionButton(
-                        label = "Add Transaction",
+                        label = "Transactions",
                         icon = Icons.Default.Add,
                         backgroundColor = blueColor,
                         iconTint = blueColor,
@@ -291,11 +291,11 @@ fun DashboardScreen(
                     )
 
                     QuickActionButton(
-                        label = "View Categories",
+                        label = "Analytics",
                         icon = Icons.Default.Home,
                         backgroundColor = yellowColor,
                         iconTint = yellowColor,
-                        onClick = { /* TODO: Navigate to categories */ },
+                        onClick = { navController.navigate("analytics_screen") },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -308,20 +308,20 @@ fun DashboardScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickActionButton(
-                        label = "Set Budget",
+                        label = "Budget",
                         icon = Icons.Default.Settings,
                         backgroundColor = greenColor,
                         iconTint = greenColor,
-                        onClick = { /* TODO: Navigate to budget settings */ },
+                        onClick = { navController.navigate("budget_screen") },
                         modifier = Modifier.weight(1f)
                     )
 
                     QuickActionButton(
-                        label = "View Reports",
+                        label = "Expenses",
                         icon = Icons.Default.AccountCircle,
                         backgroundColor = redColor,
                         iconTint = redColor,
-                        onClick = { /* TODO: Navigate to reports */ },
+                        onClick = { navController.navigate("expenses_screen") },
                         modifier = Modifier.weight(1f)
                     )
                 }
