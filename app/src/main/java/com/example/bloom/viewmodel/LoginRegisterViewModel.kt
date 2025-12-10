@@ -19,34 +19,45 @@ class LoginRegisterViewModel: ViewModel() {
     val loginController = LoginRegisterController()
     val openAlertDialog = mutableStateOf(false)
     var status by mutableStateOf<Any>("")
+    var isEmailLoading by mutableStateOf(false)
+    var isGoogleLoading by mutableStateOf(false)
 
 
     var passwordVisible by mutableStateOf(false)
 
     suspend fun login(): Boolean {
-        status = loginController.onHandleLogin(loginEmail, loginPassword)
+        isEmailLoading = true
+        try {
+            status = loginController.onHandleLogin(loginEmail, loginPassword)
 
-        //if there is an error message, an Alert Dialog will show up
-        if(status is String){
-            openAlertDialog.value = true
-            return false
+            //if there is an error message, an Alert Dialog will show up
+            if(status is String){
+                openAlertDialog.value = true
+                return false
+            }
+            else{
+                return true
+            }
+        } finally {
+            isEmailLoading = false
         }
-        else{
-            return true
-        }
-
     }
 
     suspend fun register(): Boolean {
-        status = loginController.onHandleRegister(fullName, username, createEmail, createPassword)
+        isEmailLoading = true
+        try {
+            status = loginController.onHandleRegister(fullName, username, createEmail, createPassword)
 
-        //if there is an error message, an Alert Dialog will show up
-        if(status is String){
-            openAlertDialog.value = true
-            return false
-        }
-        else{
-            return true
+            //if there is an error message, an Alert Dialog will show up
+            if(status is String){
+                openAlertDialog.value = true
+                return false
+            }
+            else{
+                return true
+            }
+        } finally {
+            isEmailLoading = false
         }
     }
 }

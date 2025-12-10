@@ -44,6 +44,8 @@ import com.example.bloom.ui.theme.BloomTheme
 import com.example.bloom.viewmodel.LoginRegisterViewModel
 
 
+import androidx.compose.material3.CircularProgressIndicator
+
 @Composable
 fun RegisterScreen(
     navController: NavController,
@@ -145,6 +147,7 @@ fun RegisterScreen(
 
             GoogleSignInButton(
                 navController = navController,
+                loginRegisterViewModel = loginRegisterViewModel,
                 buttonText = "Sign up with Google"
             )
 
@@ -168,14 +171,22 @@ fun RegisterScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                ),
+                enabled = !loginRegisterViewModel.isEmailLoading && !loginRegisterViewModel.isGoogleLoading
             ) {
-                Text(
-                    text = "Register",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
+                if (loginRegisterViewModel.isEmailLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text(
+                        text = "Register",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
             }
 
 

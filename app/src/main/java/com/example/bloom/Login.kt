@@ -63,6 +63,8 @@ import kotlinx.coroutines.launch
 import java.security.MessageDigest
 import java.util.UUID
 
+import androidx.compose.material3.CircularProgressIndicator
+
 @Composable
 fun LoginScreen(
     navController: NavController,
@@ -144,7 +146,7 @@ fun LoginScreen(
                 }
             )
 
-            GoogleSignInButton(navController)
+            GoogleSignInButton(navController, loginRegisterViewModel)
 
 
             Button(
@@ -166,14 +168,22 @@ fun LoginScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                ),
+                enabled = !loginRegisterViewModel.isEmailLoading && !loginRegisterViewModel.isGoogleLoading
             ) {
-                Text(
-                    text = "Login",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
+                if (loginRegisterViewModel.isEmailLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text(
+                        text = "Login",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
             }
 
             Row(
@@ -198,6 +208,7 @@ fun LoginScreen(
 @Composable
 fun GoogleSignInButton(
     navController: NavController,
+    loginRegisterViewModel: LoginRegisterViewModel,
     buttonText: String = "Sign in with Google"
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -241,6 +252,7 @@ fun GoogleSignInButton(
             .build()
 
         coroutineScope.launch {
+            loginRegisterViewModel.isGoogleLoading = true
             try {
                 val result = credentialManager.getCredential(
                     request = request,
@@ -282,6 +294,8 @@ fun GoogleSignInButton(
                 android.util.Log.e("GoogleSignIn", "Unknown exception: ${e.message}", e)
                 errorMessage = "Sign in failed: ${e.message}"
                 showErrorDialog = true
+            } finally {
+                loginRegisterViewModel.isGoogleLoading = false
             }
         }
     }
@@ -296,25 +310,33 @@ fun GoogleSignInButton(
             containerColor = Color.White,
             contentColor = Color(0xFF757575)
         ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDADADA))
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDADADA)),
+        enabled = !loginRegisterViewModel.isGoogleLoading && !loginRegisterViewModel.isEmailLoading
     ) {
         Row(
             modifier = Modifier.padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.google_logo),
-                contentDescription = "Google logo",
-                modifier = Modifier.size(20.dp),
-                tint = Color.Unspecified
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = buttonText,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium
-            )
+            if (loginRegisterViewModel.isGoogleLoading) {
+                 CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color(0xFF757575)
+                )
+            } else {
+                Icon(
+                    painter = painterResource(id = R.drawable.google_logo),
+                    contentDescription = "Google logo",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.Unspecified
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = buttonText,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
