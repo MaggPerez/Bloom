@@ -317,6 +317,199 @@ async def healthScore(request: ChatRequest):
         raise HTTPException(status_code=502, detail=f"Gemini health score call failed: {e}")
 
 
+@router.post("/importCSV")
+async def importCSV(file: UploadFile = File(...)):
+    """Import and validate CSV file containing transaction data.
+    
+    Validates that the CSV has required columns: Transaction Name, Amount, 
+    Transaction Type, Date, Description, and Payment method.
+    Uses AI to verify data quality and filter out irrelevant rows.
+    Returns an array of validated transaction objects.
+    """
+    # Read the uploaded file
+    raw = await file.read()
+    filename = getattr(file, "filename", "unknown")
+    
+    # Only accept CSV files
+    if not filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only CSV files are supported for import")
+    
+    # Parse CSV content
+    try:
+        decoded = raw.decode('utf-8', errors='replace')
+        stream = io.StringIO(decoded)
+        reader = csv.DictReader(stream)
+        
+        # Get the fieldnames (column headers)
+        fieldnames = reader.fieldnames
+        if not fieldnames:
+            raise HTTPException(status_code=400, detail="CSV file is empty or has no headers")
+        
+        # Read all rows
+        rows = list(reader)
+        if not rows:
+            raise HTTPException(status_code=400, detail="CSV file contains no data rows")
+            
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse CSV file: {str(e)}")
+    
+    # Get Gemini API key
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured")
+    
+    client = genai.Client(api_key=api_key)
+    
+    # Prepare CSV data for AI analysis
+    # Limit to first 100 rows to avoid token limits
+    sample_rows = rows[:100]
+    csv_preview = f"Column Headers: {', '.join(fieldnames)}\n\n"
+    csv_preview += "Sample Rows (first 10):\n"
+    for i, row in enumerate(sample_rows[:10]):
+        csv_preview += f"Row {i+1}: {row}\n"
+    
+    # System prompt for AI validation
+    system_instruction = (
+        "SYSTEM: You are a Transaction Data Validator. Your job is to analyze CSV files "
+        "containing financial transaction data and validate their structure and content.\n\n"
+        "REQUIRED COLUMNS (must be present, case-insensitive):\n"
+        "1. Transaction Name (or similar: name, transaction, description)\n"
+        "2. Amount (or similar: price, cost, value)\n"
+        "3. Transaction Type (or similar: type, category) - should contain 'Expense' or 'Income'\n"
+        "4. Date (or similar: transaction date, date)\n"
+        "5. Description (or similar: notes, memo, details)\n"
+        "6. Payment Method (or similar: payment, method, payment type)\n\n"
+        "VALIDATION RULES:\n"
+        "1. Check if the CSV has columns that match the required columns (fuzzy matching allowed)\n"
+        "2. Verify that the data is about financial transactions (expenses, income, purchases, etc.)\n"
+        "3. Check if rows contain relevant transaction data, not random/irrelevant information\n"
+        "4. Identify which columns map to the required fields\n\n"
+        "RESPOND IN THIS EXACT FORMAT:\n"
+        "STATUS: [VALID or INVALID or IRRELEVANT]\n"
+        "REASON: [Brief explanation]\n"
+        "COLUMN_MAPPING:\n"
+        "Transaction Name: [actual column name or MISSING]\n"
+        "Amount: [actual column name or MISSING]\n"
+        "Transaction Type: [actual column name or MISSING]\n"
+        "Date: [actual column name or MISSING]\n"
+        "Description: [actual column name or MISSING]\n"
+        "Payment Method: [actual column name or MISSING]\n\n"
+        "Use STATUS: VALID only if all required columns are present (with fuzzy matching).\n"
+        "Use STATUS: INVALID if required columns are missing.\n"
+        "Use STATUS: IRRELEVANT if the data is not about financial transactions."
+    )
+    
+    validation_prompt = f"{system_instruction}\n\nAnalyze this CSV:\n\n{csv_preview}"
+    
+    # Call AI to validate CSV structure
+    try:
+        validation_response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=validation_prompt
+        )
+        validation_text = validation_response.text
+        print("Validation Response:", validation_text)
+        
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"AI validation failed: {str(e)}")
+    
+    # Parse validation response
+    lines = validation_text.strip().split('\n')
+    status = None
+    reason = None
+    column_mapping = {}
+    
+    current_section = None
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        if line.startswith("STATUS:"):
+            status = line.split(":", 1)[1].strip()
+        elif line.startswith("REASON:"):
+            reason = line.split(":", 1)[1].strip()
+        elif line.startswith("COLUMN_MAPPING:"):
+            current_section = "MAPPING"
+            continue
+            
+        if current_section == "MAPPING" and ":" in line:
+            parts = line.split(":", 1)
+            key = parts[0].strip()
+            value = parts[1].strip()
+            if value != "MISSING":
+                column_mapping[key] = value
+    
+    # Check validation status
+    if status == "IRRELEVANT":
+        raise HTTPException(
+            status_code=400, 
+            detail="The CSV file contains irrelevant or non-transaction data. Please upload a file with financial transaction data."
+        )
+    
+    if status == "INVALID" or not column_mapping:
+        required_cols = [
+            "Transaction Name", "Amount", "Transaction Type", 
+            "Date", "Description", "Payment Method"
+        ]
+        missing = [col for col in required_cols if col not in column_mapping]
+        raise HTTPException(
+            status_code=400,
+            detail=f"CSV file must have the following columns: {', '.join(required_cols)}. Missing: {', '.join(missing) if missing else 'columns not found'}"
+        )
+    
+    # Process and filter rows
+    valid_transactions = []
+    skipped_count = 0
+    
+    for row in rows:
+        # Extract values using column mapping
+        try:
+            transaction_name = row.get(column_mapping.get("Transaction Name", ""), "").strip()
+            amount = row.get(column_mapping.get("Amount", ""), "").strip()
+            transaction_type = row.get(column_mapping.get("Transaction Type", ""), "").strip()
+            date = row.get(column_mapping.get("Date", ""), "").strip()
+            description = row.get(column_mapping.get("Description", ""), "").strip()
+            payment_method = row.get(column_mapping.get("Payment Method", ""), "").strip()
+            
+            # Validate required fields are not empty
+            if not transaction_name or not amount or not transaction_type or not date:
+                skipped_count += 1
+                continue
+            
+            # Build transaction object
+            transaction = {
+                "transactionName": transaction_name,
+                "amount": amount,
+                "transactionType": transaction_type,
+                "date": date,
+                "description": description,
+                "paymentMethod": payment_method
+            }
+            
+            valid_transactions.append(transaction)
+            
+        except Exception as e:
+            # Skip rows that cause errors
+            skipped_count += 1
+            continue
+    
+    if not valid_transactions:
+        raise HTTPException(
+            status_code=400,
+            detail="No valid transactions found in CSV. Ensure rows have Transaction Name, Amount, Transaction Type, and Date filled."
+        )
+    
+    return {
+        "success": True,
+        "message": f"Successfully imported {len(valid_transactions)} transactions. Skipped {skipped_count} invalid rows.",
+        "transactions": valid_transactions,
+        "totalRows": len(rows),
+        "validRows": len(valid_transactions),
+        "skippedRows": skipped_count
+    }
+
+
 # @router.get("/geminiResponse")
 # async def geminiResponse():
 #     client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))

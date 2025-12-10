@@ -27,6 +27,12 @@ interface RetrofitAPI {
     @POST("healthScore")
     suspend fun calculateHealthScore(@Body request: AIFeatureDataModel.ChatRequest): AIFeatureDataModel.AIHealthScoreResponse
 
+    @Multipart
+    @POST("importCSV")
+    suspend fun importCSV(
+        @Part file: MultipartBody.Part
+    ): com.example.bloom.aifeatures.CsvImportResponse
+
     @GET("getGeminiResponse")
     suspend fun getGeminiResponse(): AIFeatureDataModel.AIGenerativeDataModel
 
