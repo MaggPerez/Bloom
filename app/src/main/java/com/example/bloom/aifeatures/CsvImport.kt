@@ -123,7 +123,7 @@ fun CsvImportScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
@@ -225,7 +225,7 @@ fun UploadCsvScreen(
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.background
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -244,7 +244,7 @@ fun UploadCsvScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.background
                 ),
                 border = BorderStroke(1.5.dp, aiPurple),
                 shape = RoundedCornerShape(12.dp)
@@ -409,7 +409,7 @@ fun ReviewTransactionsScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.background
             ),
             border = BorderStroke(1.5.dp, aiPurple),
             shape = RoundedCornerShape(12.dp)
@@ -538,7 +538,7 @@ fun TransactionPreviewCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = Color.Transparent
         ),
         border = BorderStroke(1.dp, aiPurple.copy(alpha = 0.3f)),
         shape = RoundedCornerShape(8.dp)
