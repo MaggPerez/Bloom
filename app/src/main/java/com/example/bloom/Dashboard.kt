@@ -164,31 +164,6 @@ fun DashboardScreen(
                             color = MaterialTheme.colorScheme.onBackground
                         )
                     }
-
-                    OutlinedButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                // Sign out from Supabase (works for both email and OAuth users)
-                                supabase.auth.signOut()
-
-                                // Navigate to main screen and clear the back stack
-                                navController.navigate("main_screen") {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
-                        },
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Sign Out",
-                            modifier = Modifier.size(20.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        Text("Sign Out")
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

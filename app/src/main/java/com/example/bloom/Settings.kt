@@ -28,6 +28,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.ui.graphics.Color
+import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import com.example.bloom.ui.theme.BloomTheme
 import com.example.bloom.viewmodel.SettingsViewModel
@@ -43,6 +47,7 @@ fun SettingsScreen(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     // Image picker launcher
@@ -113,7 +118,17 @@ fun SettingsScreen(
             HorizontalDivider()
 
             // Appearance Section
-            AppearanceSection(viewModel = viewModel)
+            AppearanceSection(
+                viewModel = viewModel,
+                onSignOut = {
+                    coroutineScope.launch {
+                        SupabaseClient.client.auth.signOut()
+                        navController.navigate("main_screen") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            )
 
             // Loading indicator
             if (viewModel.isLoading || viewModel.isUploadingAvatar) {
@@ -227,7 +242,10 @@ fun ProfileSection(
 }
 
 @Composable
-fun AppearanceSection(viewModel: SettingsViewModel) {
+fun AppearanceSection(
+    viewModel: SettingsViewModel,
+    onSignOut: () -> Unit
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -237,6 +255,28 @@ fun AppearanceSection(viewModel: SettingsViewModel) {
             selectedTheme = viewModel.themePreference,
             onThemeSelected = { viewModel.updateTheme(it) }
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedButton(
+            onClick = onSignOut,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = Color.Red
+            ),
+            border = BorderStroke(1.dp, Color.Red)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                contentDescription = "Sign Out",
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text("Sign Out")
+        }
     }
 }
 
