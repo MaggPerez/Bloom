@@ -183,6 +183,21 @@ fun LoginScreen(
 fun GoogleSignInButton(navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+
+    // Show error dialog if there's an error
+    if (showErrorDialog && errorMessage != null) {
+        AlertDialogPopUp(
+            onDismissRequest = {
+                showErrorDialog = false
+                errorMessage = null
+            },
+            dialogTitle = "Google Sign In Error",
+            dialogText = errorMessage ?: "Unknown error occurred",
+            icon = Icons.Default.Info
+        )
+    }
 
     val onClick: () -> Unit = {
         val credentialManager = CredentialManager.create(context)
@@ -198,7 +213,7 @@ fun GoogleSignInButton(navController: NavController) {
 
         val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
-            .setServerClientId("ENV(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)")
+            .setServerClientId(BuildConfig.GOOGLE_CLIENT_ID)
             .setNonce(hashedNonce) // Provide the nonce if you have one
             .build()
 
@@ -230,12 +245,24 @@ fun GoogleSignInButton(navController: NavController) {
                 }
             } catch (e: GetCredentialException) {
                 // Handle GetCredentialException thrown by `credentialManager.getCredential()`
+                android.util.Log.e("GoogleSignIn", "GetCredentialException: ${e.message}", e)
+                errorMessage = "Failed to get credentials: ${e.message}"
+                showErrorDialog = true
             } catch (e: GoogleIdTokenParsingException) {
                 // Handle GoogleIdTokenParsingException thrown by `GoogleIdTokenCredential.createFrom()`
+                android.util.Log.e("GoogleSignIn", "GoogleIdTokenParsingException: ${e.message}", e)
+                errorMessage = "Failed to parse Google ID token: ${e.message}"
+                showErrorDialog = true
             } catch (e: RestException) {
                 // Handle RestException thrown by Supabase
+                android.util.Log.e("GoogleSignIn", "RestException: ${e.message}", e)
+                errorMessage = "Supabase authentication failed: ${e.message}"
+                showErrorDialog = true
             } catch (e: Exception) {
                 // Handle unknown exceptions
+                android.util.Log.e("GoogleSignIn", "Unknown exception: ${e.message}", e)
+                errorMessage = "Sign in failed: ${e.message}"
+                showErrorDialog = true
             }
         }
     }
