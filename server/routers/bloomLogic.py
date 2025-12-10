@@ -235,19 +235,27 @@ async def healthScore(request: ChatRequest):
         "2. Savings Rate (Max 30): Are they saving money? (Income vs Expense)\n"
         "3. Spending Consistency (Max 20): Is spending predictable?\n"
         "4. Emergency Fund (Max 10): Do they have savings buffer?\n\n"
+        "CRITICAL SCORING RULES:\n"
+        "- ALL scores MUST be WHOLE NUMBERS (integers) between 0 and 100\n"
+        "- NO decimal points allowed (e.g., use 27, NOT 27.5 or 27.63)\n"
+        "- Total SCORE must be between 0-100 (sum of breakdown scores)\n"
+        "- Budget Adherence: integer between 0-40\n"
+        "- Savings Rate: integer between 0-30\n"
+        "- Spending Consistency: integer between 0-20\n"
+        "- Emergency Fund: integer between 0-10\n\n"
         "You MUST respond in EXACTLY this format:\n\n"
-        "SCORE: [number]\n"
+        "SCORE: [integer from 0-100]\n"
         "BREAKDOWN:\n"
-        "Budget Adherence: [number]\n"
-        "Savings Rate: [number]\n"
-        "Spending Consistency: [number]\n"
-        "Emergency Fund: [number]\n"
+        "Budget Adherence: [integer 0-40]\n"
+        "Savings Rate: [integer 0-30]\n"
+        "Spending Consistency: [integer 0-20]\n"
+        "Emergency Fund: [integer 0-10]\n"
         "RECOMMENDATIONS:\n"
         "1. [First recommendation]\n"
         "2. [Second recommendation]\n"
         "3. [Third recommendation]\n"
         "4. [Fourth recommendation]\n\n"
-        "Be strict with the format. No markdown."
+        "Be strict with the format. No markdown. NO DECIMALS - only whole numbers!"
     )
 
     full_prompt = f"{system_instruction}\n\nUSER DATA:\n{request.message}"
@@ -302,6 +310,13 @@ async def healthScore(request: ChatRequest):
             
             elif current_section == "RECOMMENDATIONS":
                 recommendations += line + "\n"
+
+        # Clamp scores to their valid ranges to ensure they stay within bounds
+        score = max(0, min(100, score))
+        budget_score = max(0, min(40, budget_score))
+        savings_score = max(0, min(30, savings_score))
+        consistency_score = max(0, min(20, consistency_score))
+        emergency_score = max(0, min(10, emergency_score))
 
         return {
             "score": score,
