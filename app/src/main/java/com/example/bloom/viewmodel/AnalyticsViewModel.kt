@@ -41,6 +41,7 @@ class AnalyticsViewModel : ViewModel() {
         private set
     var recurringBills by mutableStateOf<RecurringBillSummary?>(null)
         private set
+
     var insights by mutableStateOf<SpendingInsights?>(null)
         private set
 

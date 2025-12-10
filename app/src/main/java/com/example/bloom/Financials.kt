@@ -96,12 +96,20 @@ fun FinancialsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 FinancialCard(
-                    title = "Transactions",
-                    description = "View and manage your transaction history",
+                    title = "Income",
+                    description = "View and manage your income",
                     icon = Icons.Default.Receipt,
                     color = Color(0xFF10B981), // Green
-                    onClick = { navController.navigate("transaction_screen") }
+                    onClick = { navController.navigate("income_screen") }
                 )
+//
+//                FinancialCard(
+//                    title = "Transactions",
+//                    description = "View and manage your transaction history",
+//                    icon = Icons.Default.Receipt,
+//                    color = Color(0xFF10B981), // Green
+//                    onClick = { navController.navigate("transaction_screen") }
+//                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 

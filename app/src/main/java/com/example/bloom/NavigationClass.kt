@@ -83,6 +83,11 @@ fun Navigation() {
             FinancialsScreen(navController)
         }
 
+        composable("income_screen") {
+            IncomeScreen(navController)
+        }
+
+
         composable("expenses_screen") {
             ExpensesScreen(navController)
         }

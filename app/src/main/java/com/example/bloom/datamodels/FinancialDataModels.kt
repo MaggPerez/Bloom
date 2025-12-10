@@ -172,3 +172,21 @@ data class ExpenseData(
     val created_at: String? = null,
     val updated_at: String? = null
 )
+
+@Serializable
+data class IncomeData(
+    val id: String? = null,
+    val user_id: String,
+    val source: String, // "Salary", "Freelance", "Investment", "Gift", etc.
+    val amount: Double,
+    val income_date: String, // Format: yyyy-MM-dd
+    val description: String? = null,
+    val image_url: String? = null,
+    val icon_name: String? = null, // Name of the default Android icon
+    val color_hex: String? = null, // Hex code for the icon color
+    val tags: String? = null, // Comma-separated tags
+    val is_recurring: Boolean = false,
+    val recurring_frequency: String? = null, // "Daily", "Weekly", "Monthly", "Yearly"
+    val created_at: String? = null,
+    val updated_at: String? = null
+)
