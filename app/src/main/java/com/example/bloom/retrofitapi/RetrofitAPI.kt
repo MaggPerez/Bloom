@@ -32,4 +32,8 @@ interface RetrofitAPI {
 
     //todo: link health score to supabase (when user generates, it should get stored to supabase so
     //users don't have to regenerate again unless they want a new health insight
+
+    //todo: work on ai feature import CSV file to extract transactions.
+
+    //todo: connect everything, fix UI's, remove two ai features that couldn't make it and you're DONE
 }
