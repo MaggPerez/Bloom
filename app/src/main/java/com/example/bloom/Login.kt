@@ -1,6 +1,7 @@
 package com.example.bloom
 
 import android.content.Intent
+import android.credentials.GetCredentialException
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +46,18 @@ import com.example.bloom.viewmodel.LoginRegisterViewModel
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.providers.builtin.IDToken
+import io.github.jan.supabase.exceptions.RestException
 import kotlinx.coroutines.launch
+import java.security.MessageDigest
+import java.util.UUID
 
 @Composable
 fun LoginScreen(
@@ -128,6 +140,8 @@ fun LoginScreen(
                 }
             )
 
+            GoogleSignInButton(navController)
+
 
             Button(
                 onClick = {
@@ -161,6 +175,75 @@ fun LoginScreen(
 
 
         }
+    }
+}
+
+
+@Composable
+fun GoogleSignInButton(navController: NavController) {
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    val onClick: () -> Unit = {
+        val credentialManager = CredentialManager.create(context)
+
+        // Generate a nonce and hash it with sha-256
+        // Providing a nonce is optional but recommended
+        val rawNonce = UUID.randomUUID().toString() // Generate a random String. UUID should be sufficient, but can also be any other random string.
+        val bytes = rawNonce.toString().toByteArray()
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(bytes)
+        val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) } // Hashed nonce to be passed to Google sign-in
+
+
+        val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId("ENV(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)")
+            .setNonce(hashedNonce) // Provide the nonce if you have one
+            .build()
+
+        val request: GetCredentialRequest = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
+        coroutineScope.launch {
+            try {
+                val result = credentialManager.getCredential(
+                    request = request,
+                    context = context,
+                )
+
+                val googleIdTokenCredential = GoogleIdTokenCredential
+                    .createFrom(result.credential.data)
+
+                val googleIdToken = googleIdTokenCredential.idToken
+
+                SupabaseClient.client.auth.signInWith(IDToken) {
+                    idToken = googleIdToken
+                    provider = Google
+                    nonce = rawNonce
+                }
+
+                // Navigate to dashboard on successful sign-in
+                navController.navigate("dashboard_screen") {
+                    popUpTo("main_screen") { inclusive = true }
+                }
+            } catch (e: GetCredentialException) {
+                // Handle GetCredentialException thrown by `credentialManager.getCredential()`
+            } catch (e: GoogleIdTokenParsingException) {
+                // Handle GoogleIdTokenParsingException thrown by `GoogleIdTokenCredential.createFrom()`
+            } catch (e: RestException) {
+                // Handle RestException thrown by Supabase
+            } catch (e: Exception) {
+                // Handle unknown exceptions
+            }
+        }
+    }
+
+    Button(
+        onClick = onClick,
+    ) {
+        Text("Sign in with Google")
     }
 }
 

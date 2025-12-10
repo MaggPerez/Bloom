@@ -1,6 +1,7 @@
 package com.example.bloom
 
 import android.content.Intent
+import android.credentials.GetCredentialException
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -51,6 +52,17 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bloom.ui.theme.BloomTheme
 import com.example.bloom.viewmodel.LoginRegisterViewModel
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.providers.builtin.IDToken
+import io.github.jan.supabase.exceptions.RestException
+import java.security.MessageDigest
+import java.util.UUID
 
 
 @Composable
@@ -152,6 +164,7 @@ fun RegisterScreen(
                 }
             )
 
+            GoogleSignInButton(navController)
 
 
             //Register Button
