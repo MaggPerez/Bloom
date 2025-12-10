@@ -79,7 +79,7 @@ class AnalyticsController {
     }
 
     /**
-     * Fetch monthly income/expense trends from SQL view
+     * Fetch monthly income/expense trends from expenses and income tables
      */
     private suspend fun fetchMonthlyTrends(
         userId: String,
@@ -87,28 +87,63 @@ class AnalyticsController {
         endDate: String
     ): List<MonthlyTrendData> {
         return try {
-            val response = supabase.from("monthly_income_expense_summary")
+            val start = LocalDate.parse(startDate)
+            val end = LocalDate.parse(endDate)
+
+            // Fetch all expenses in date range
+            val expenses = supabase.from("expenses")
                 .select() {
                     filter {
                         eq("user_id", userId)
+                        gte("due_date", startDate)
+                        lte("due_date", endDate)
                     }
                 }
-                .decodeList<MonthlyAggregateResult>()
+                .decodeList<ExpenseData>()
 
-            // Filter by date range and transform
-            response
-                .filter { isInDateRange(it.month, it.year, startDate, endDate) }
-                .map { result ->
-                    MonthlyTrendData(
-                        month = formatMonthYear(result.month, result.year),
-                        monthYear = Pair(result.month, result.year),
-                        totalIncome = result.total_income,
-                        totalExpenses = result.total_expenses,
-                        netAmount = result.total_income - result.total_expenses,
-                        transactionCount = result.transaction_count
-                    )
+            // Fetch all income in date range
+            val income = supabase.from("income")
+                .select() {
+                    filter {
+                        eq("user_id", userId)
+                        gte("income_date", startDate)
+                        lte("income_date", endDate)
+                    }
                 }
-                .sortedBy { it.monthYear.second * 12 + it.monthYear.first }
+                .decodeList<IncomeData>()
+
+            // Group by month/year
+            val monthlyData = mutableMapOf<Pair<Int, Int>, MutableMap<String, Double>>()
+
+            // Process expenses
+            expenses.forEach { expense ->
+                val date = LocalDate.parse(expense.due_date)
+                val key = Pair(date.monthValue, date.year)
+                val data = monthlyData.getOrPut(key) { mutableMapOf("income" to 0.0, "expenses" to 0.0, "count" to 0.0) }
+                data["expenses"] = (data["expenses"] ?: 0.0) + expense.amount
+                data["count"] = (data["count"] ?: 0.0) + 1
+            }
+
+            // Process income
+            income.forEach { inc ->
+                val date = LocalDate.parse(inc.income_date)
+                val key = Pair(date.monthValue, date.year)
+                val data = monthlyData.getOrPut(key) { mutableMapOf("income" to 0.0, "expenses" to 0.0, "count" to 0.0) }
+                data["income"] = (data["income"] ?: 0.0) + inc.amount
+                data["count"] = (data["count"] ?: 0.0) + 1
+            }
+
+            // Convert to MonthlyTrendData
+            monthlyData.map { (monthYear, data) ->
+                MonthlyTrendData(
+                    month = formatMonthYear(monthYear.first, monthYear.second),
+                    monthYear = monthYear,
+                    totalIncome = data["income"] ?: 0.0,
+                    totalExpenses = data["expenses"] ?: 0.0,
+                    netAmount = (data["income"] ?: 0.0) - (data["expenses"] ?: 0.0),
+                    transactionCount = data["count"]?.toInt() ?: 0
+                )
+            }.sortedBy { it.monthYear.second * 12 + it.monthYear.first }
         } catch (e: Exception) {
             emptyList()
         }
@@ -116,7 +151,7 @@ class AnalyticsController {
 
     /**
      * Fetch category breakdown with percentages
-     * Joins transactions with categories table
+     * Groups expenses by name for category-like breakdown
      */
     private suspend fun fetchCategoryBreakdown(
         userId: String,
@@ -124,47 +159,36 @@ class AnalyticsController {
         endDate: String
     ): List<CategoryBreakdownData> {
         return try {
-            val response = supabase.from("transactions")
-                .select(
-                    columns = Columns.raw("""
-                        category_id,
-                        amount,
-                        categories!inner(name, color_hex)
-                    """.trimIndent())
-                ) {
+            // Fetch expenses in date range
+            val expenses = supabase.from("expenses")
+                .select() {
                     filter {
                         eq("user_id", userId)
-                        eq("transaction_type", "expense")
-                        gte("transaction_date", startDate)
-                        lte("transaction_date", endDate)
+                        gte("due_date", startDate)
+                        lte("due_date", endDate)
                     }
                 }
-                .decodeList<JsonObject>()
+                .decodeList<ExpenseData>()
 
-            // Group by category and aggregate
+            // Group by expense name (treating each expense type as a category)
             val categoryMap = mutableMapOf<String, MutableList<Double>>()
-            val categoryInfo = mutableMapOf<String, Pair<String, String>>() // name, color
+            val categoryColors = mutableMapOf<String, String>()
 
-            response.forEach { txn ->
-                val categoryId = txn["category_id"]?.jsonPrimitive?.content ?: return@forEach
-                val amount = txn["amount"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
-                val category = txn["categories"]?.jsonObject
-                val name = category?.get("name")?.jsonPrimitive?.content ?: "Unknown"
-                val color = category?.get("color_hex")?.jsonPrimitive?.content ?: "#808080"
-
-                categoryMap.getOrPut(categoryId) { mutableListOf() }.add(amount)
-                categoryInfo[categoryId] = Pair(name, color)
+            expenses.forEach { expense ->
+                val categoryName = expense.name
+                categoryMap.getOrPut(categoryName) { mutableListOf() }.add(expense.amount)
+                // Use expense color if available, otherwise use default
+                categoryColors[categoryName] = expense.color_hex ?: "#4CAF50"
             }
 
             val totalSpending = categoryMap.values.flatten().sum()
 
-            categoryMap.map { (catId, amounts) ->
-                val (name, colorHex) = categoryInfo[catId] ?: Pair("Unknown", "#808080")
+            categoryMap.map { (name, amounts) ->
                 val total = amounts.sum()
                 CategoryBreakdownData(
-                    categoryId = catId,
+                    categoryId = name, // Using name as ID since we don't have category IDs
                     categoryName = name,
-                    categoryColor = parseColor(colorHex),
+                    categoryColor = parseColor(categoryColors[name] ?: "#4CAF50"),
                     totalSpent = total,
                     percentage = if (totalSpending > 0) ((total / totalSpending) * 100).toFloat() else 0f,
                     transactionCount = amounts.size,
@@ -177,7 +201,7 @@ class AnalyticsController {
     }
 
     /**
-     * Fetch budget adherence data from SQL view
+     * Fetch budget adherence data from budget_summary table
      */
     private suspend fun fetchBudgetAdherence(
         userId: String,
@@ -185,27 +209,52 @@ class AnalyticsController {
         endDate: String
     ): List<BudgetAdherenceData> {
         return try {
-            val response = supabase.from("budget_performance_analysis")
+            val start = LocalDate.parse(startDate)
+            val end = LocalDate.parse(endDate)
+
+            // Fetch budget summaries
+            val budgets = supabase.from("budget_summary")
                 .select() {
                     filter {
                         eq("user_id", userId)
                     }
                 }
-                .decodeList<BudgetPerformanceResult>()
-
-            response
+                .decodeList<BudgetSummaryData>()
                 .filter { isInDateRange(it.month, it.year, startDate, endDate) }
-                .map { result ->
-                    BudgetAdherenceData(
-                        month = formatMonthYear(result.month, result.year),
-                        budgetAmount = result.monthly_budget,
-                        actualSpent = result.actual_spent,
-                        difference = result.budget_remaining,
-                        adherencePercentage = result.spent_percentage.toFloat(),
-                        isOverBudget = result.actual_spent > result.monthly_budget
-                    )
+
+            // Fetch expenses and group by month
+            val expenses = supabase.from("expenses")
+                .select() {
+                    filter {
+                        eq("user_id", userId)
+                        gte("due_date", startDate)
+                        lte("due_date", endDate)
+                    }
                 }
-                .sortedBy { it.month }
+                .decodeList<ExpenseData>()
+
+            val expensesByMonth = expenses.groupBy { expense ->
+                val date = LocalDate.parse(expense.due_date)
+                Pair(date.monthValue, date.year)
+            }.mapValues { (_, expenseList) -> expenseList.sumOf { it.amount } }
+
+            budgets.map { budget ->
+                val key = Pair(budget.month, budget.year)
+                val actualSpent = expensesByMonth[key] ?: 0.0
+                val difference = budget.monthly_budget - actualSpent
+                val percentage = if (budget.monthly_budget > 0) {
+                    ((actualSpent / budget.monthly_budget) * 100).toFloat()
+                } else 0f
+
+                BudgetAdherenceData(
+                    month = formatMonthYear(budget.month, budget.year),
+                    budgetAmount = budget.monthly_budget,
+                    actualSpent = actualSpent,
+                    difference = difference,
+                    adherencePercentage = percentage,
+                    isOverBudget = actualSpent > budget.monthly_budget
+                )
+            }.sortedBy { it.month }
         } catch (e: Exception) {
             emptyList()
         }
@@ -267,28 +316,30 @@ class AnalyticsController {
         endDate: String
     ): Pair<Double, Double> {
         return try {
-            val response = supabase.from("transactions")
-                .select(columns = Columns.raw("transaction_type, amount")) {
+            // Fetch all expenses in date range
+            val expenses = supabase.from("expenses")
+                .select() {
                     filter {
                         eq("user_id", userId)
-                        gte("transaction_date", startDate)
-                        lte("transaction_date", endDate)
+                        gte("due_date", startDate)
+                        lte("due_date", endDate)
                     }
                 }
-                .decodeList<JsonObject>()
+                .decodeList<ExpenseData>()
 
-            var totalIncome = 0.0
-            var totalExpenses = 0.0
-
-            response.forEach { txn ->
-                val type = txn["transaction_type"]?.jsonPrimitive?.content
-                val amount = txn["amount"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
-
-                when (type) {
-                    "income" -> totalIncome += amount
-                    "expense" -> totalExpenses += amount
+            // Fetch all income in date range
+            val income = supabase.from("income")
+                .select() {
+                    filter {
+                        eq("user_id", userId)
+                        gte("income_date", startDate)
+                        lte("income_date", endDate)
+                    }
                 }
-            }
+                .decodeList<IncomeData>()
+
+            val totalIncome = income.sumOf { it.amount }
+            val totalExpenses = expenses.sumOf { it.amount }
 
             Pair(totalIncome, totalExpenses)
         } catch (e: Exception) {
@@ -328,7 +379,7 @@ class AnalyticsController {
     }
 
     /**
-     * Get largest transaction for the period
+     * Get largest expense for the period
      */
     private suspend fun getLargestTransaction(
         userId: String,
@@ -336,31 +387,25 @@ class AnalyticsController {
         endDate: String
     ): TransactionSummary? {
         return try {
-            val response = supabase.from("transactions")
-                .select(columns = Columns.raw("""
-                    amount,
-                    transaction_date,
-                    description,
-                    categories!inner(name)
-                """.trimIndent())) {
+            // Fetch all expenses in date range
+            val expenses = supabase.from("expenses")
+                .select() {
                     filter {
                         eq("user_id", userId)
-                        eq("transaction_type", "expense")
-                        gte("transaction_date", startDate)
-                        lte("transaction_date", endDate)
+                        gte("due_date", startDate)
+                        lte("due_date", endDate)
                     }
-                    order(column = "amount", order = io.github.jan.supabase.postgrest.query.Order.DESCENDING)
-                    limit(1)
                 }
-                .decodeList<JsonObject>()
+                .decodeList<ExpenseData>()
 
-            val txn = response.firstOrNull() ?: return null
+            // Find the largest expense
+            val largestExpense = expenses.maxByOrNull { it.amount } ?: return null
 
             TransactionSummary(
-                amount = txn["amount"]?.jsonPrimitive?.content?.toDouble() ?: 0.0,
-                categoryName = txn["categories"]?.jsonObject?.get("name")?.jsonPrimitive?.content ?: "Unknown",
-                date = txn["transaction_date"]?.jsonPrimitive?.content ?: "",
-                description = txn["description"]?.jsonPrimitive?.content
+                amount = largestExpense.amount,
+                categoryName = largestExpense.name, // Using expense name as category
+                date = largestExpense.due_date,
+                description = largestExpense.tags
             )
         } catch (e: Exception) {
             null
