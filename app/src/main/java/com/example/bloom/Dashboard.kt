@@ -168,11 +168,13 @@ fun DashboardScreen(
                     OutlinedButton(
                         onClick = {
                             coroutineScope.launch {
+                                // Sign out from Supabase (works for both email and OAuth users)
+                                supabase.auth.signOut()
+
+                                // Navigate to main screen and clear the back stack
                                 navController.navigate("main_screen") {
                                     popUpTo(0) { inclusive = true }
                                 }
-
-                                //todo supabase signout
                             }
                         },
                         shape = RoundedCornerShape(8.dp)
@@ -324,22 +326,6 @@ fun DashboardScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-
-
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            navController.navigate("main_screen") {
-                                popUpTo(0) { inclusive = true }
-                            }
-                        supabase.auth.signOut()
-                        }
-                    }
-                ) {
-                    Text(text = "Sign Out")
-                }
             }
         }
 
