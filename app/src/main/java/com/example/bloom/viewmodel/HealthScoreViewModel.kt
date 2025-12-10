@@ -7,7 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bloom.controllers.BudgetController
-import com.example.bloom.controllers.TransactionController
+import com.example.bloom.controllers.HealthScoreController
 import com.example.bloom.controllers.BloomAIController
 import kotlinx.coroutines.launch
 import kotlin.math.min
@@ -15,7 +15,7 @@ import kotlin.math.min
 class HealthScoreViewModel : ViewModel() {
 
     private val budgetController = BudgetController()
-    private val transactionController = TransactionController()
+    private val healthScoreController = HealthScoreController()
     private val aiController = BloomAIController()
 
     // =====================================================
@@ -166,8 +166,8 @@ class HealthScoreViewModel : ViewModel() {
             }
         )
 
-        // Load monthly income (from income transactions)
-        transactionController.getMonthlyIncome().fold(
+        // Load monthly income (from income table)
+        healthScoreController.getMonthlyIncome().fold(
             onSuccess = { income ->
                 monthlyIncome = income
             },
@@ -176,8 +176,8 @@ class HealthScoreViewModel : ViewModel() {
             }
         )
 
-        // Load average monthly expenses
-        transactionController.getAverageMonthlyExpenses().fold(
+        // Load average monthly expenses (from expenses table)
+        healthScoreController.getAverageMonthlyExpenses().fold(
             onSuccess = { avgExpense ->
                 averageMonthlyExpense = avgExpense
             },
@@ -370,7 +370,7 @@ class HealthScoreViewModel : ViewModel() {
     }
 
     /**
-     * Generate AI-powered health score and recommendations based on raw financial data
+     * Generate AI-powered health score and recommendations based on comprehensive financial data
      */
     fun generateAIHealthScore() {
         viewModelScope.launch {
@@ -381,13 +381,12 @@ class HealthScoreViewModel : ViewModel() {
                 // Ensure we have the latest summary data
                 loadFinancialData()
 
-                // Fetch recent transactions for context
-                val transactionsResult = transactionController.fetchTransactions(page = 0, pageSize = 20)
-                val transactions = transactionsResult.getOrNull() ?: emptyList()
+                // Fetch comprehensive financial data including detailed income and expenses
+                val comprehensiveData = healthScoreController.getComprehensiveFinancialData().getOrNull()
 
-                // Build comprehensive raw data summary for AI
-                val data = buildRawFinancialDataSummary(transactions)
-                Log.d("HealthScoreViewModel", "Sending raw data to AI: $data")
+                // Build enhanced data summary for AI with real expense and income details
+                val data = buildEnhancedFinancialDataSummary(comprehensiveData)
+                Log.d("HealthScoreViewModel", "Sending enhanced data to AI: $data")
 
                 // Call AI endpoint
                 aiController.generateHealthScore(data).fold(
@@ -411,10 +410,10 @@ class HealthScoreViewModel : ViewModel() {
                             // Split recommendations string into a list if it's bulleted, or just wrap it
                             // For now, we'll store the raw text for the AI card, and parse for the list card if needed
                             aiRecommendations = response.recommendations
-                            
+
                             // Optionally parse the AI recommendations into the main list
                             recommendations = parseRecommendationsToList(response.recommendations)
-                            
+
                             Log.d("HealthScoreViewModel", "AI health score and breakdown updated successfully")
                         } else {
                             errorMessage = "AI returned empty recommendations"
@@ -436,31 +435,95 @@ class HealthScoreViewModel : ViewModel() {
     }
 
     /**
-     * Build raw financial data summary for AI analysis
+     * Build enhanced financial data summary for AI analysis with detailed income and expense breakdown
      */
-    private fun buildRawFinancialDataSummary(transactions: List<com.example.bloom.datamodels.TransactionWithCategory>): String {
+    private fun buildEnhancedFinancialDataSummary(data: com.example.bloom.controllers.FinancialHealthData?): String {
         return buildString {
-            appendLine("Raw Financial Data for Health Score Calculation:")
-            appendLine("Budget & Goals:")
+            appendLine("=== COMPREHENSIVE FINANCIAL DATA FOR HEALTH SCORE ANALYSIS ===")
+            appendLine()
+
+            appendLine("BUDGET & SAVINGS GOALS:")
             appendLine("- Monthly Budget Limit: $${"%.2f".format(monthlyBudget)}")
             appendLine("- Savings Goal: $${"%.2f".format(savingsGoal)}")
             appendLine("- Current Savings: $${"%.2f".format(currentSavings)}")
+            appendLine("- Emergency Fund Coverage: ${"%.1f".format(if (averageMonthlyExpense > 0) currentSavings / averageMonthlyExpense else 0.0)} months")
             appendLine()
-            appendLine("Income & Spending:")
-            appendLine("- Monthly Income: $${"%.2f".format(monthlyIncome)}")
+
+            appendLine("INCOME SUMMARY:")
+            appendLine("- Current Month Income: $${"%.2f".format(monthlyIncome)}")
+            appendLine("- Average Monthly Income (3-month): $${"%.2f".format(data?.averageMonthlyIncome ?: 0.0)}")
+            appendLine("- Savings Rate: ${"%.1f".format(if (monthlyIncome > 0) ((monthlyIncome - totalSpent) / monthlyIncome * 100) else 0.0)}%")
+            appendLine()
+
+            appendLine("EXPENSE SUMMARY:")
             appendLine("- Total Spent This Month: $${"%.2f".format(totalSpent)}")
-            appendLine("- Average Monthly Expense (3-month avg): $${"%.2f".format(averageMonthlyExpense)}")
+            appendLine("- Average Monthly Expenses (3-month): $${"%.2f".format(averageMonthlyExpense)}")
+            appendLine("- Budget Utilization: ${"%.1f".format(if (monthlyBudget > 0) (totalSpent / monthlyBudget * 100) else 0.0)}%")
             appendLine()
-            appendLine("Recent Transactions (Last 20):")
-            if (transactions.isEmpty()) {
-                appendLine("- No recent transactions found.")
-            } else {
-                transactions.forEach { txn ->
-                    appendLine("- ${txn.transactionDate}: ${txn.description} (${txn.categoryName}) - $${"%.2f".format(txn.amount)} [${txn.transactionType}]")
+
+            // Detailed Income Breakdown
+            if (data != null && data.monthlyIncomeDetails.isNotEmpty()) {
+                appendLine("DETAILED INCOME (This Month):")
+                data.monthlyIncomeDetails.take(10).forEach { income ->
+                    val recurring = if (income.is_recurring) " [${income.recurring_frequency}]" else ""
+                    appendLine("- ${income.income_date}: ${income.source}$recurring - $${"%.2f".format(income.amount)}")
                 }
+                if (data.monthlyIncomeDetails.size > 10) {
+                    appendLine("  ... and ${data.monthlyIncomeDetails.size - 10} more income entries")
+                }
+                appendLine()
             }
-            appendLine()
-            appendLine("Please analyze this raw data to calculate the financial health score and provide recommendations.")
+
+            // Detailed Expense Breakdown
+            if (data != null && data.monthlyExpenseDetails.isNotEmpty()) {
+                appendLine("DETAILED EXPENSES (This Month):")
+                data.monthlyExpenseDetails.take(10).forEach { expense ->
+                    val recurring = if (expense.recurring_frequency != null) " [${expense.recurring_frequency}]" else ""
+                    appendLine("- ${expense.due_date}: ${expense.name}$recurring - $${"%.2f".format(expense.amount)}")
+                }
+                if (data.monthlyExpenseDetails.size > 10) {
+                    appendLine("  ... and ${data.monthlyExpenseDetails.size - 10} more expense entries")
+                }
+                appendLine()
+            }
+
+            // Expense Category Breakdown
+            if (data != null && data.expenseBreakdown.isNotEmpty()) {
+                appendLine("SPENDING BY CATEGORY:")
+                data.expenseBreakdown.entries
+                    .sortedByDescending { it.value }
+                    .take(8)
+                    .forEach { (category, amount) ->
+                        val percentage = if (totalSpent > 0) (amount / totalSpent * 100) else 0.0
+                        appendLine("- $category: $${"%.2f".format(amount)} (${"%.1f".format(percentage)}%)")
+                    }
+                appendLine()
+            }
+
+            // Recurring Expenses
+            if (data != null && data.recurringExpenses.isNotEmpty()) {
+                appendLine("RECURRING BILLS:")
+                val totalRecurring = data.recurringExpenses.sumOf { it.amount }
+                appendLine("- Total Recurring: $${"%.2f".format(totalRecurring)}")
+                data.recurringExpenses.take(5).forEach { expense ->
+                    appendLine("  • ${expense.name}: $${"%.2f".format(expense.amount)} [${expense.recurring_frequency}]")
+                }
+                appendLine()
+            }
+
+            appendLine("=== INSTRUCTIONS FOR AI ===")
+            appendLine("Please analyze the comprehensive financial data above to:")
+            appendLine("1. Calculate a Financial Health Score (0-100) with breakdown:")
+            appendLine("   - Budget Adherence Score (max 40 points)")
+            appendLine("   - Savings Rate Score (max 30 points)")
+            appendLine("   - Spending Consistency Score (max 20 points)")
+            appendLine("   - Emergency Fund Score (max 10 points)")
+            appendLine("2. Provide personalized recommendations based on:")
+            appendLine("   - Spending patterns and categories")
+            appendLine("   - Income stability and growth")
+            appendLine("   - Savings progress and emergency fund adequacy")
+            appendLine("   - Budget adherence and consistency")
+            appendLine("3. Focus on actionable, specific advice tailored to this user's financial situation")
         }
     }
 
