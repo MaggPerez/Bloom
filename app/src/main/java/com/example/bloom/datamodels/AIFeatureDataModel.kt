@@ -79,7 +79,8 @@ class AIFeatureDataModel {
                 description = "Upload your transactions and let AI create your budget automatically",
                 icon = Icons.Default.Add,
                 color = aiPurple,
-                actionType = AIActionType.NAVIGATE_TO_SCREEN
+                actionType = AIActionType.NAVIGATE_TO_SCREEN,
+                route = "csv_import_screen"
             ),
             AIFeature(
                 title = "Health Score",

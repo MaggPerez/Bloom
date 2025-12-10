@@ -100,6 +100,10 @@ fun Navigation() {
             com.example.bloom.aifeatures.HealthScoreScreen(navController)
         }
 
+        composable("csv_import_screen"){
+            com.example.bloom.aifeatures.CsvImportScreen(navController)
+        }
+
         composable("smart_insights_screen") {
             com.example.bloom.aifeatures.SmartInsightsScreen(navController)
         }
