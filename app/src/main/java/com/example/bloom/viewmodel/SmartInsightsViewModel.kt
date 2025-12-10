@@ -210,14 +210,14 @@ class SmartInsightsViewModel : ViewModel() {
      * Find top spending category
      */
     private fun findTopSpendingCategory(): Pair<String, Double>? {
-        val expenseTransactions = transactions.filter { it.transactionType == "expense" }
+        val expenseTransactions = transactions.filter { it.transactionType == "expense" && it.categoryName != null }
         if (expenseTransactions.isEmpty()) return null
 
         val categorySpending = expenseTransactions
-            .groupBy { it.categoryName }
+            .groupBy { it.categoryName!! }
             .mapValues { it.value.sumOf { txn -> txn.amount } }
 
-        return categorySpending.maxByOrNull { it.value }?.toPair()
+        return categorySpending.maxByOrNull { it.value }?.let { Pair(it.key, it.value) }
     }
 
     /**
