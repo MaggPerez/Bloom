@@ -194,3 +194,25 @@ data class IncomeData(
     val created_at: String? = null,
     val updated_at: String? = null
 )
+
+@Serializable
+data class HealthScoreData(
+    val id: String? = null,
+    val user_id: String,
+    val overall_score: Int, // 0-100
+    val budget_adherence_score: Int, // 0-40
+    val savings_rate_score: Int, // 0-30
+    val spending_consistency_score: Int, // 0-20
+    val emergency_fund_score: Int, // 0-10
+    val recommendations: String,
+    val monthly_budget: Double = 0.0,
+    val total_spent: Double = 0.0,
+    val monthly_income: Double = 0.0,
+    val current_savings: Double = 0.0,
+    val savings_goal: Double = 0.0,
+    val score_rating: String, // "Excellent", "Good", "Fair", "Poor", "Very Poor"
+    val score_month: Int, // 1-12
+    val score_year: Int, // e.g., 2024
+    val created_at: String? = null,
+    val updated_at: String? = null
+)

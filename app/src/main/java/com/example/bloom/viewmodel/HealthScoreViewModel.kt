@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.bloom.controllers.BudgetController
 import com.example.bloom.controllers.HealthScoreController
 import com.example.bloom.controllers.BloomAIController
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 import kotlin.math.min
 
@@ -17,6 +18,9 @@ class HealthScoreViewModel : ViewModel() {
     private val budgetController = BudgetController()
     private val healthScoreController = HealthScoreController()
     private val aiController = BloomAIController()
+
+    // Removed init block to prevent race condition with state initialization
+    // Call loadCachedHealthScore() from the composable using LaunchedEffect instead
 
     // =====================================================
     // STATE VARIABLES
@@ -151,8 +155,11 @@ class HealthScoreViewModel : ViewModel() {
                     currentSavings = budget.current_savings
                 }
             },
-            onFailure = { e ->
-                throw e
+            onFailure = {
+                // For first-time users with no budget data, use defaults
+                monthlyBudget = 0.0
+                savingsGoal = 0.0
+                currentSavings = 0.0
             }
         )
 
@@ -161,8 +168,9 @@ class HealthScoreViewModel : ViewModel() {
             onSuccess = { spent ->
                 totalSpent = spent
             },
-            onFailure = { e ->
-                throw e
+            onFailure = {
+                // For first-time users with no transactions, use default
+                totalSpent = 0.0
             }
         )
 
@@ -182,7 +190,7 @@ class HealthScoreViewModel : ViewModel() {
                 averageMonthlyExpense = avgExpense
             },
             onFailure = {
-                averageMonthlyExpense = totalSpent
+                averageMonthlyExpense = 0.0
             }
         )
     }
@@ -356,10 +364,84 @@ class HealthScoreViewModel : ViewModel() {
     }
 
     /**
-     * Refresh health score calculation
+     * Load cached health score from Supabase
+     */
+    fun loadCachedHealthScore() {
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+
+            try {
+                // Try to get health score for current month
+                val cachedScore = healthScoreController.getCurrentMonthHealthScore().getOrNull()
+
+                if (cachedScore != null) {
+                    // Load cached health score
+                    healthScore = cachedScore.overall_score
+                    budgetAdherenceScore = cachedScore.budget_adherence_score
+                    savingsRateScore = cachedScore.savings_rate_score
+                    spendingConsistencyScore = cachedScore.spending_consistency_score
+                    emergencyFundScore = cachedScore.emergency_fund_score
+
+                    // Load financial snapshot
+                    monthlyBudget = cachedScore.monthly_budget
+                    totalSpent = cachedScore.total_spent
+                    monthlyIncome = cachedScore.monthly_income
+                    currentSavings = cachedScore.current_savings
+                    savingsGoal = cachedScore.savings_goal
+
+                    // Load recommendations
+                    aiRecommendations = cachedScore.recommendations
+                    recommendations = parseRecommendationsToList(cachedScore.recommendations)
+
+                    Log.d("HealthScoreViewModel", "Loaded cached health score: $healthScore")
+                } else {
+                    // No cached score, try to calculate a new one
+                    // For first-time users with no data, this will result in a score of 0
+                    Log.d("HealthScoreViewModel", "No cached score found, calculating new score")
+                    try {
+                        calculateHealthScore()
+                    } catch (e: Exception) {
+                        // If calculation fails (e.g., no data for first-time users), just set defaults
+                        Log.e("HealthScoreViewModel", "Failed to calculate health score, using defaults", e)
+                        healthScore = 0
+                        budgetAdherenceScore = 0
+                        savingsRateScore = 0
+                        spendingConsistencyScore = 0
+                        emergencyFundScore = 0
+                        recommendations = listOf(
+                            "Welcome to Bloom! Start by setting up your budget.",
+                            "Add your income sources to track your earnings.",
+                            "Record your expenses to get a complete financial picture.",
+                            "Generate your AI health score once you have some data."
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HealthScoreViewModel", "Failed to load cached health score", e)
+                // Set safe defaults for first-time users
+                healthScore = 0
+                budgetAdherenceScore = 0
+                savingsRateScore = 0
+                spendingConsistencyScore = 0
+                emergencyFundScore = 0
+                recommendations = listOf(
+                    "Welcome to Bloom! Start by setting up your budget.",
+                    "Add your income sources to track your earnings.",
+                    "Record your expenses to get a complete financial picture.",
+                    "Generate your AI health score once you have some data."
+                )
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    /**
+     * Refresh health score - tries to load from cache first
      */
     fun refresh() {
-        calculateHealthScore()
+        loadCachedHealthScore()
     }
 
     /**
@@ -415,6 +497,9 @@ class HealthScoreViewModel : ViewModel() {
                             recommendations = parseRecommendationsToList(response.recommendations)
 
                             Log.d("HealthScoreViewModel", "AI health score and breakdown updated successfully")
+
+                            // Save health score to Supabase for caching
+                            saveHealthScoreToSupabase(response)
                         } else {
                             errorMessage = "AI returned empty recommendations"
                             Log.e("HealthScoreViewModel", "AI returned empty recommendations")
@@ -532,5 +617,46 @@ class HealthScoreViewModel : ViewModel() {
             .map { it.trim() }
             .filter { it.isNotEmpty() && (it.first().isDigit() || it.startsWith("-") || it.startsWith("•")) }
             .map { it.replaceFirst(Regex("^\\d+\\.\\s*|[-•]\\s*"), "") }
+    }
+
+    /**
+     * Save health score to Supabase for caching
+     */
+    private fun saveHealthScoreToSupabase(response: com.example.bloom.datamodels.AIFeatureDataModel.AIHealthScoreResponse) {
+        viewModelScope.launch {
+            try {
+                val currentDate = java.time.LocalDate.now()
+                val userId = com.example.bloom.SupabaseClient.client.auth.currentUserOrNull()?.id ?: return@launch
+
+                val healthScoreData = com.example.bloom.datamodels.HealthScoreData(
+                    user_id = userId,
+                    overall_score = response.score,
+                    budget_adherence_score = response.budgetAdherenceScore,
+                    savings_rate_score = response.savingsRateScore,
+                    spending_consistency_score = response.spendingConsistencyScore,
+                    emergency_fund_score = response.emergencyFundScore,
+                    recommendations = response.recommendations,
+                    monthly_budget = monthlyBudget,
+                    total_spent = totalSpent,
+                    monthly_income = monthlyIncome,
+                    current_savings = currentSavings,
+                    savings_goal = savingsGoal,
+                    score_rating = scoreRating,
+                    score_month = currentDate.monthValue,
+                    score_year = currentDate.year
+                )
+
+                healthScoreController.saveHealthScore(healthScoreData).fold(
+                    onSuccess = {
+                        Log.d("HealthScoreViewModel", "Health score saved to Supabase successfully")
+                    },
+                    onFailure = { e ->
+                        Log.e("HealthScoreViewModel", "Failed to save health score to Supabase", e)
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("HealthScoreViewModel", "Exception while saving health score", e)
+            }
+        }
     }
 }
