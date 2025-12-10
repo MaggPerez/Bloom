@@ -35,10 +35,11 @@ class TransactionController {
      * Create a new transaction
      */
     suspend fun createTransaction(
-        categoryId: String,
+        transactionName: String,
         amount: Double,
         transactionDate: String,
         transactionType: String,
+        categoryId: String? = null,
         description: String? = null,
         paymentMethod: PaymentMethod? = null,
         tags: List<String> = emptyList(),
@@ -50,6 +51,7 @@ class TransactionController {
             val newTransaction = TransactionData(
                 user_id = userId,
                 category_id = categoryId,
+                transaction_name = transactionName,
                 amount = amount,
                 transaction_date = transactionDate,
                 transaction_type = transactionType,
@@ -73,10 +75,11 @@ class TransactionController {
      */
     suspend fun updateTransaction(
         transactionId: String,
-        categoryId: String,
+        transactionName: String,
         amount: Double,
         transactionDate: String,
         transactionType: String,
+        categoryId: String? = null,
         description: String? = null,
         paymentMethod: PaymentMethod? = null,
         tags: List<String> = emptyList(),
@@ -88,6 +91,7 @@ class TransactionController {
             supabase.from("transactions")
                 .update({
                     set("category_id", categoryId)
+                    set("transaction_name", transactionName)
                     set("amount", amount)
                     set("transaction_date", transactionDate)
                     set("transaction_type", transactionType)
@@ -144,7 +148,7 @@ class TransactionController {
         return try {
             val userId = getUserId() ?: return Result.failure(Exception("User not authenticated"))
 
-            // Fetch transactions with category join
+            // Fetch transactions with optional category join
             val response = supabase.from("transactions")
                 .select(
                     columns = Columns.raw(
@@ -152,6 +156,7 @@ class TransactionController {
                         id,
                         user_id,
                         category_id,
+                        transaction_name,
                         amount,
                         transaction_date,
                         transaction_type,
@@ -160,7 +165,7 @@ class TransactionController {
                         tags,
                         receipt_url,
                         created_at,
-                        categories!inner(id, name, color_hex, icon_name)
+                        categories!left(id, name, color_hex, icon_name)
                         """.trimIndent()
                     )
                 ) {
@@ -209,9 +214,10 @@ class TransactionController {
                     TransactionWithCategory(
                         id = txn["id"]?.jsonPrimitive?.content ?: "",
                         userId = txn["user_id"]?.jsonPrimitive?.content ?: "",
-                        categoryId = txn["category_id"]?.jsonPrimitive?.content ?: "",
-                        categoryName = category?.get("name")?.jsonPrimitive?.content ?: "Unknown",
-                        categoryColorHex = category?.get("color_hex")?.jsonPrimitive?.content ?: "#808080",
+                        categoryId = txn["category_id"]?.jsonPrimitive?.content,
+                        transactionName = txn["transaction_name"]?.jsonPrimitive?.content,
+                        categoryName = category?.get("name")?.jsonPrimitive?.content,
+                        categoryColorHex = category?.get("color_hex")?.jsonPrimitive?.content,
                         categoryIconName = category?.get("icon_name")?.jsonPrimitive?.content,
                         amount = txn["amount"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
                         transactionDate = txn["transaction_date"]?.jsonPrimitive?.content ?: "",
@@ -307,13 +313,14 @@ class TransactionController {
                     columns = Columns.raw(
                         """
                         id,
+                        transaction_name,
                         amount,
                         transaction_date,
                         transaction_type,
                         description,
                         payment_method,
                         tags,
-                        categories!inner(name)
+                        categories!left(name)
                         """.trimIndent()
                     )
                 ) {
@@ -349,12 +356,13 @@ class TransactionController {
 
             FileWriter(file).use { writer ->
                 // Write CSV header
-                writer.append("Date,Category,Type,Amount,Payment Method,Description,Tags\n")
+                writer.append("Date,Transaction Name,Category,Type,Amount,Payment Method,Description,Tags\n")
 
                 // Write transaction rows
                 sortedTransactions.forEach { txn ->
+                    val transactionName = txn["transaction_name"]?.jsonPrimitive?.content ?: ""
                     val category = txn["categories"]?.jsonObject
-                    val categoryName = category?.get("name")?.jsonPrimitive?.content ?: "Unknown"
+                    val categoryName = category?.get("name")?.jsonPrimitive?.content ?: ""
 
                     // Handle tags
                     val tagsStr = when (val tagsValue = txn["tags"]) {
@@ -369,6 +377,7 @@ class TransactionController {
                     }
 
                     writer.append("\"${txn["transaction_date"]?.jsonPrimitive?.content ?: ""}\",")
+                    writer.append("\"$transactionName\",")
                     writer.append("\"$categoryName\",")
                     writer.append("\"${txn["transaction_type"]?.jsonPrimitive?.content ?: ""}\",")
                     writer.append("${txn["amount"]?.jsonPrimitive?.content ?: "0"},")

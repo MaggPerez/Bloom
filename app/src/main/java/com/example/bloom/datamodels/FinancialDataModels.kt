@@ -102,7 +102,8 @@ enum class PaymentMethod {
 data class TransactionData(
     val id: String? = null,
     val user_id: String,
-    val category_id: String,
+    val category_id: String? = null,
+    val transaction_name: String? = null, // User-defined name for the transaction
     val amount: Double,
     val transaction_date: String, // DATE format: "yyyy-MM-dd"
     val transaction_type: String, // "expense" or "income"
@@ -122,9 +123,10 @@ data class TransactionData(
 data class TransactionWithCategory(
     val id: String,
     val userId: String,
-    val categoryId: String,
-    val categoryName: String,
-    val categoryColorHex: String,
+    val categoryId: String?,
+    val transactionName: String?, // User-defined name for the transaction
+    val categoryName: String?,
+    val categoryColorHex: String?,
     val categoryIconName: String?,
     val amount: Double,
     val transactionDate: String,
@@ -134,10 +136,12 @@ data class TransactionWithCategory(
     val tags: List<String>,
     val receiptUrl: String?
 ) {
-    val categoryColor: Color get() = Color(android.graphics.Color.parseColor(categoryColorHex))
+    val categoryColor: Color get() = categoryColorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: Color.Gray
     val tagsList: String get() = tags.joinToString(", ")
     val isExpense: Boolean get() = transactionType == "expense"
     val isIncome: Boolean get() = transactionType == "income"
+    // Display transaction name if available, otherwise fall back to category name
+    val displayName: String get() = transactionName ?: categoryName ?: "Unknown"
 }
 
 // Filter state for transactions

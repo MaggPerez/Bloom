@@ -67,7 +67,7 @@ class TransactionViewModel : ViewModel() {
         private set
 
     // Form state for Add/Edit dialogs
-    var formCategoryId by mutableStateOf("")
+    var formTransactionName by mutableStateOf("")
     var formAmount by mutableStateOf("")
     var formTransactionDate by mutableStateOf(LocalDate.now().toString())
     var formTransactionType by mutableStateOf("expense")
@@ -167,21 +167,21 @@ class TransactionViewModel : ViewModel() {
                 isLoading = true
                 errorMessage = null
 
+                if (formTransactionName.isBlank()) {
+                    errorMessage = "Please enter a transaction name"
+                    return@launch
+                }
+
                 val amount = formAmount.toDoubleOrNull()
                 if (amount == null || amount <= 0) {
                     errorMessage = "Please enter a valid amount"
                     return@launch
                 }
 
-                if (formCategoryId.isBlank()) {
-                    errorMessage = "Please select a category"
-                    return@launch
-                }
-
                 val tagsList = formTags.split(",").map { it.trim() }.filter { it.isNotBlank() }
 
                 val result = transactionController.createTransaction(
-                    categoryId = formCategoryId,
+                    transactionName = formTransactionName,
                     amount = amount,
                     transactionDate = formTransactionDate,
                     transactionType = formTransactionType,
@@ -221,14 +221,14 @@ class TransactionViewModel : ViewModel() {
                     return@launch
                 }
 
-                val amount = formAmount.toDoubleOrNull()
-                if (amount == null || amount <= 0) {
-                    errorMessage = "Please enter a valid amount"
+                if (formTransactionName.isBlank()) {
+                    errorMessage = "Please enter a transaction name"
                     return@launch
                 }
 
-                if (formCategoryId.isBlank()) {
-                    errorMessage = "Please select a category"
+                val amount = formAmount.toDoubleOrNull()
+                if (amount == null || amount <= 0) {
+                    errorMessage = "Please enter a valid amount"
                     return@launch
                 }
 
@@ -236,7 +236,7 @@ class TransactionViewModel : ViewModel() {
 
                 val result = transactionController.updateTransaction(
                     transactionId = transactionId,
-                    categoryId = formCategoryId,
+                    transactionName = formTransactionName,
                     amount = amount,
                     transactionDate = formTransactionDate,
                     transactionType = formTransactionType,
@@ -493,7 +493,7 @@ class TransactionViewModel : ViewModel() {
      * Clear form fields
      */
     private fun clearForm() {
-        formCategoryId = ""
+        formTransactionName = ""
         formAmount = ""
         formTransactionDate = LocalDate.now().toString()
         formTransactionType = "expense"
@@ -507,7 +507,7 @@ class TransactionViewModel : ViewModel() {
      * Populate form from transaction (for editing)
      */
     private fun populateFormFromTransaction(transaction: TransactionWithCategory) {
-        formCategoryId = transaction.categoryId
+        formTransactionName = transaction.transactionName ?: ""
         formAmount = transaction.amount.toString()
         formTransactionDate = transaction.transactionDate
         formTransactionType = transaction.transactionType

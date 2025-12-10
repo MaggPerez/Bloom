@@ -371,7 +371,6 @@ fun TransactionScreen(
             AddEditTransactionDialog(
                 title = "Add Transaction",
                 transactionViewModel = transactionViewModel,
-                categories = budgetViewModel.categories.map { it.name to it.id },
                 onDismiss = { transactionViewModel.closeDialogs() },
                 onSave = { transactionViewModel.addTransaction() }
             )
@@ -381,7 +380,6 @@ fun TransactionScreen(
             AddEditTransactionDialog(
                 title = "Edit Transaction",
                 transactionViewModel = transactionViewModel,
-                categories = budgetViewModel.categories.map { it.name to it.id },
                 onDismiss = { transactionViewModel.closeDialogs() },
                 onSave = { transactionViewModel.updateTransaction() }
             )
@@ -533,7 +531,7 @@ fun TransactionCard(
 
                 Column {
                     Text(
-                        text = transaction.categoryName,
+                        text = transaction.displayName,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -610,11 +608,9 @@ fun TransactionCard(
 fun AddEditTransactionDialog(
     title: String,
     transactionViewModel: TransactionViewModel,
-    categories: List<Pair<String, String>>, // Name to ID
     onDismiss: () -> Unit,
     onSave: () -> Unit
 ) {
-    var showCategoryDropdown by remember { mutableStateOf(false) }
     var showPaymentMethodDropdown by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
@@ -625,6 +621,16 @@ fun AddEditTransactionDialog(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // Transaction Name
+                OutlinedTextField(
+                    value = transactionViewModel.formTransactionName,
+                    onValueChange = { transactionViewModel.formTransactionName = it },
+                    label = { Text("Transaction Name *") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Amount
                 OutlinedTextField(
                     value = transactionViewModel.formAmount,
@@ -653,39 +659,6 @@ fun AddEditTransactionDialog(
                         label = { Text("Income") },
                         modifier = Modifier.weight(1f)
                     )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Category Dropdown
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = categories.find { it.second == transactionViewModel.formCategoryId }?.first ?: "",
-                        onValueChange = {},
-                        label = { Text("Category *") },
-                        readOnly = true,
-                        trailingIcon = {
-                            IconButton(onClick = { showCategoryDropdown = true }) {
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Select category")
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showCategoryDropdown = true }
-                    )
-                    DropdownMenu(
-                        expanded = showCategoryDropdown,
-                        onDismissRequest = { showCategoryDropdown = false }
-                    ) {
-                        categories.forEach { (name, id) ->
-                            DropdownMenuItem(
-                                text = { Text(name) },
-                                onClick = {
-                                    transactionViewModel.formCategoryId = id
-                                    showCategoryDropdown = false
-                                }
-                            )
-                        }
-                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -801,7 +774,7 @@ fun DeleteTransactionDialog(
         title = { Text("Delete Transaction") },
         text = {
             transaction?.let {
-                Text("Are you sure you want to delete this ${it.transactionType} of $${String.format(Locale.US, "%.2f", it.amount)} from ${it.categoryName}?")
+                Text("Are you sure you want to delete this ${it.transactionType} of $${String.format(Locale.US, "%.2f", it.amount)} (${it.displayName})?")
             }
         },
         confirmButton = {
