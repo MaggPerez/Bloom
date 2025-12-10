@@ -83,7 +83,7 @@ class TransactionController {
                 transaction_type = transactionType,
                 description = description,
                 payment_method = paymentMethod?.name,
-                tags = if (tags.isNotEmpty()) tags.joinToString(",") else null,
+                tags = if (tags.isNotEmpty()) tags else null, // Send as List<String> array
                 receipt_url = receiptUrl
             )
 
@@ -114,6 +114,8 @@ class TransactionController {
         return try {
             val userId = getUserId() ?: return Result.failure(Exception("User not authenticated"))
 
+            // PostgreSQL expects an array for tags column, not null or comma-separated string
+            // Send empty array [] instead of null to avoid "malformed array literal" error
             supabase.from("transactions")
                 .update({
                     set("category_id", categoryId)
@@ -123,7 +125,7 @@ class TransactionController {
                     set("transaction_type", transactionType)
                     set("description", description)
                     set("payment_method", paymentMethod?.name)
-                    set("tags", if (tags.isNotEmpty()) tags.joinToString(",") else null)
+                    set("tags", tags)  // Send as List<String>, not comma-separated
                     set("receipt_url", receiptUrl)
                 }) {
                     filter {

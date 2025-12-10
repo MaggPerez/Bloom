@@ -112,7 +112,7 @@ data class TransactionData(
     val payment_method: String? = null, // PaymentMethod enum value as string
     val location: String? = null,
     val receipt_url: String? = null,
-    val tags: String? = null, // Stored as comma-separated string for compatibility
+    val tags: List<String>? = null, // Array of tags matching Supabase TEXT[] type
     val is_recurring: Boolean? = false,
     val recurring_frequency: String? = null, // "daily", "weekly", "monthly", "yearly"
     val created_at: String? = null,
