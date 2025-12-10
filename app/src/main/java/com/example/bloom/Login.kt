@@ -1,29 +1,33 @@
 package com.example.bloom
 
-import android.content.Intent
 import android.credentials.GetCredentialException
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -155,9 +159,21 @@ fun LoginScreen(
                     }
 
                 },
-                modifier = modifier.fillMaxWidth()
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
-                Text("Login")
+                Text(
+                    text = "Login",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
             }
 
             Row(
@@ -180,7 +196,10 @@ fun LoginScreen(
 
 
 @Composable
-fun GoogleSignInButton(navController: NavController) {
+fun GoogleSignInButton(
+    navController: NavController,
+    buttonText: String = "Sign in with Google"
+) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -267,10 +286,36 @@ fun GoogleSignInButton(navController: NavController) {
         }
     }
 
-    Button(
+    OutlinedButton(
         onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.White,
+            contentColor = Color(0xFF757575)
+        ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDADADA))
     ) {
-        Text("Sign in with Google")
+        Row(
+            modifier = Modifier.padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.google_logo),
+                contentDescription = "Google logo",
+                modifier = Modifier.size(20.dp),
+                tint = Color.Unspecified
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = buttonText,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 
