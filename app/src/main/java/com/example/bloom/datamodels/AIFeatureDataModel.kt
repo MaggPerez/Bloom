@@ -90,21 +90,21 @@ class AIFeatureDataModel {
                 actionType = AIActionType.NAVIGATE_TO_SCREEN,
                 route = "health_score_screen"
             ),
-            AIFeature(
-                title = "What-If Scenarios",
-                description = "Explore how different financial decisions impact your future",
-                icon = Icons.Default.Home,
-                color = aiPurple,
-                actionType = AIActionType.NAVIGATE_TO_SCREEN
-            ),
-            AIFeature(
-                title = "Bill Predictions",
-                description = "AI detects recurring bills and alerts you before they're due",
-                icon = Icons.Default.DateRange,
-                color = aiPurple,
-                actionType = AIActionType.NAVIGATE_TO_SCREEN,
-                route = "health_score_screen"
-            )
+//            AIFeature(
+//                title = "What-If Scenarios",
+//                description = "Explore how different financial decisions impact your future",
+//                icon = Icons.Default.Home,
+//                color = aiPurple,
+//                actionType = AIActionType.NAVIGATE_TO_SCREEN
+//            ),
+//            AIFeature(
+//                title = "Bill Predictions",
+//                description = "AI detects recurring bills and alerts you before they're due",
+//                icon = Icons.Default.DateRange,
+//                color = aiPurple,
+//                actionType = AIActionType.NAVIGATE_TO_SCREEN,
+//                route = "health_score_screen"
+//            )
         )
     }
 }
