@@ -122,4 +122,8 @@ dependencies {
     //MPAndroidChart
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
+    //google oAuth from supabase
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation ("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
 }
