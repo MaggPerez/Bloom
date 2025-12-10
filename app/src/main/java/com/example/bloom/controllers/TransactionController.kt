@@ -32,6 +32,32 @@ class TransactionController {
     // =====================================================
 
     /**
+     * Simple diagnostic function to test if basic transaction fetching works
+     * Returns count of transactions in database for current user
+     */
+    suspend fun testTransactionFetch(): Result<String> {
+        return try {
+            val userId = getUserId()
+            if (userId == null) {
+                return Result.success("ERROR: User not authenticated - getUserId() returned null")
+            }
+
+            // Test simple query
+            val response = supabase.from("transactions")
+                .select(columns = Columns.raw("id")) {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                }
+
+            val transactions = response.decodeList<JsonObject>()
+            Result.success("SUCCESS: Found ${transactions.size} transactions for user $userId")
+        } catch (e: Exception) {
+            Result.success("ERROR: ${e.message}\n${e.stackTraceToString()}")
+        }
+    }
+
+    /**
      * Create a new transaction
      */
     suspend fun createTransaction(
@@ -146,29 +172,38 @@ class TransactionController {
         filter: TransactionFilter? = null
     ): Result<List<TransactionWithCategory>> {
         return try {
-            val userId = getUserId() ?: return Result.failure(Exception("User not authenticated"))
+            val userId = getUserId()
+            if (userId == null) {
+                println("TransactionController: User not authenticated")
+                return Result.failure(Exception("User not authenticated"))
+            }
 
-            // Fetch transactions with optional category join
+            println("TransactionController: Fetching transactions for user: $userId, page: $page")
+
+            // First, fetch all categories for the user to have them available for lookup
+            val categoriesMap = try {
+                val categoriesResponse = supabase.from("categories")
+                    .select(columns = Columns.raw("id, name, color_hex, icon_name")) {
+                        filter {
+                            eq("user_id", userId)
+                        }
+                    }
+
+                val categories = categoriesResponse.decodeList<JsonObject>()
+                println("TransactionController: Fetched ${categories.size} categories")
+                categories.associate { cat ->
+                    val id = cat["id"]?.jsonPrimitive?.content ?: ""
+                    id to cat
+                }
+            } catch (e: Exception) {
+                println("TransactionController: Error fetching categories: ${e.message}")
+                e.printStackTrace()
+                emptyMap() // If categories fetch fails, continue without them
+            }
+
+            // Fetch transactions without join to avoid foreign key issues
             val response = supabase.from("transactions")
-                .select(
-                    columns = Columns.raw(
-                        """
-                        id,
-                        user_id,
-                        category_id,
-                        transaction_name,
-                        amount,
-                        transaction_date,
-                        transaction_type,
-                        description,
-                        payment_method,
-                        tags,
-                        receipt_url,
-                        created_at,
-                        categories!left(id, name, color_hex, icon_name)
-                        """.trimIndent()
-                    )
-                ) {
+                .select(columns = Columns.raw("*")) {
                     filter {
                         eq("user_id", userId)
 
@@ -185,18 +220,30 @@ class TransactionController {
                             f.minAmount?.let { gte("amount", it) }
                             f.maxAmount?.let { lte("amount", it) }
                             f.searchQuery?.takeIf { it.isNotBlank() }?.let {
-                                ilike("description", "%$it%")
+                                // Search in both transaction_name and description
+                                or {
+                                    ilike("transaction_name", "%$it%")
+                                    ilike("description", "%$it%")
+                                }
                             }
                         }
                     }
+                    // Order by transaction_date DESC, then by created_at DESC
+                    order(column = "transaction_date", order = io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                    order(column = "created_at", order = io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+
+                    // Apply pagination at database level
+                    range(from = (page * pageSize).toLong(), to = ((page + 1) * pageSize - 1).toLong())
                 }
 
             val transactions = response.decodeList<JsonObject>()
+            println("TransactionController: Fetched ${transactions.size} raw transactions from Supabase")
 
-            // Parse and map transactions
+            // Parse and map transactions, manually looking up category info
             val transactionsWithCategory = transactions.mapNotNull { txn ->
                 try {
-                    val category = txn["categories"]?.jsonObject
+                    val categoryId = txn["category_id"]?.jsonPrimitive?.content
+                    val category = categoryId?.let { categoriesMap[it] }
 
                     // Handle tags - can be array or string depending on Supabase client
                     val tagsList = when (val tagsValue = txn["tags"]) {
@@ -214,7 +261,7 @@ class TransactionController {
                     TransactionWithCategory(
                         id = txn["id"]?.jsonPrimitive?.content ?: "",
                         userId = txn["user_id"]?.jsonPrimitive?.content ?: "",
-                        categoryId = txn["category_id"]?.jsonPrimitive?.content,
+                        categoryId = categoryId,
                         transactionName = txn["transaction_name"]?.jsonPrimitive?.content,
                         categoryName = category?.get("name")?.jsonPrimitive?.content,
                         categoryColorHex = category?.get("color_hex")?.jsonPrimitive?.content,
@@ -229,29 +276,19 @@ class TransactionController {
                         tags = tagsList,
                         receiptUrl = txn["receipt_url"]?.jsonPrimitive?.content
                     )
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    // Log individual transaction parsing errors but don't fail the whole operation
+                    e.printStackTrace()
                     null
                 }
             }
 
-            // Sort by transaction date (newest first), then by created_at
-            val sortedTransactions = transactionsWithCategory.sortedWith(
-                compareByDescending<TransactionWithCategory> { it.transactionDate }
-                    .thenByDescending { it.id }
-            )
-
-            // Apply pagination in-memory
-            val startIndex = page * pageSize
-            val endIndex = (startIndex + pageSize).coerceAtMost(sortedTransactions.size)
-            val paginatedTransactions = if (startIndex < sortedTransactions.size) {
-                sortedTransactions.subList(startIndex, endIndex)
-            } else {
-                emptyList()
-            }
-
-            Result.success(paginatedTransactions)
+            println("TransactionController: Returning ${transactionsWithCategory.size} parsed transactions")
+            Result.success(transactionsWithCategory)
         } catch (e: Exception) {
-            Result.failure(e)
+            // Log the actual error for debugging
+            e.printStackTrace()
+            Result.failure(Exception("Failed to fetch transactions: ${e.message}", e))
         }
     }
 
