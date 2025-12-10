@@ -36,8 +36,6 @@ interface RetrofitAPI {
     @GET("getGeminiResponse")
     suspend fun getGeminiResponse(): AIFeatureDataModel.AIGenerativeDataModel
 
-    //todo: link health score to supabase (when user generates, it should get stored to supabase so
-    //users don't have to regenerate again unless they want a new health insight
 
     //todo: connect everything, fix UI's, and you're DONE
 }
