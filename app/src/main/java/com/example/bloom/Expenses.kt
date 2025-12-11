@@ -249,7 +249,7 @@ fun ExpensesScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(if (isSelectionMode) Color(0xFFEF4444).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
+                                .background(if (isSelectionMode) Color(0xFFEF4444).copy(alpha = 0.15f) else MaterialTheme.colorScheme.background)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
