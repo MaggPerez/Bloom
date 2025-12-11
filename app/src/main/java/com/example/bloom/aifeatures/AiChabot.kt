@@ -210,7 +210,7 @@ fun AiChatbotScreen(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                                .background(PrimaryPurple.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             IconButton(
@@ -232,7 +232,7 @@ fun AiChatbotScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(24.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                                .background(PrimaryPurple.copy(alpha = 0.15f))
                         ) {
                             OutlinedTextField(
                                 value = promptText,
@@ -444,7 +444,7 @@ fun ChatBubble(message: ChatMessage) {
                 bottomStart = if (isUser) 20.dp else 4.dp,
                 bottomEnd = if (isUser) 4.dp else 20.dp
             ),
-            color = if (isUser) PrimaryPurple else MaterialTheme.colorScheme.surfaceVariant,
+            color = if (isUser) PrimaryPurple else PrimaryPurple.copy(alpha = 0.15f),
             modifier = Modifier.widthIn(max = 280.dp)
         ) {
             Text(
