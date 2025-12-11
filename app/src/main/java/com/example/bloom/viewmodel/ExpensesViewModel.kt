@@ -46,40 +46,31 @@ class ExpensesViewModel : ViewModel() {
     }
 
     private fun calculateMetrics() {
-        val now = LocalDate.now()
-        val formatter = DateTimeFormatter.ISO_LOCAL_DATE
-
         var total = 0.0
-        var monthly = 0.0
-        var yearly = 0.0
+        var yearlyAverage = 0.0
 
         expenses.forEach { expense ->
             // Total Expenses (Sum of all)
             total += expense.amount
 
-            try {
-                // Parse due date to check for month/year matches
-                // Assuming due_date is relevant for "when" the expense occurs
-                val expenseDate = LocalDate.parse(expense.due_date, formatter)
-
-                // Monthly: Matches current month and year
-                if (expenseDate.month == now.month && expenseDate.year == now.year) {
-                    monthly += expense.amount
-                }
-
-                // Yearly: Matches current year
-                if (expenseDate.year == now.year) {
-                    yearly += expense.amount
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                // If date parsing fails, skip month/year calc for this item
+            // Calculate annualized amount based on recurring frequency
+            val annualizedAmount = when (expense.recurring_frequency?.lowercase()) {
+                "daily" -> expense.amount * 365
+                "weekly" -> expense.amount * 52
+                "monthly" -> expense.amount * 12
+                "yearly" -> expense.amount
+                else -> expense.amount // If no frequency, treat as one-time (yearly)
             }
+
+            yearlyAverage += annualizedAmount
         }
 
+        // Calculate monthly average from yearly total
+        val monthlyAverage = yearlyAverage / 12
+
         totalExpenses = total
-        monthlyExpenses = monthly
-        yearlyExpenses = yearly
+        monthlyExpenses = monthlyAverage
+        yearlyExpenses = yearlyAverage
     }
 
     fun addExpense(
