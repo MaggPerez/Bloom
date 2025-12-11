@@ -612,7 +612,7 @@ fun SpendingPieChartAnalytics(
                             holeRadius = 40f
                             transparentCircleRadius = 45f
                             setDrawCenterText(true)
-                            centerText = "Categories"
+                            centerText = "Expenses"
                             setCenterTextSize(14f)
                             setCenterTextColor(AndroidColor.GRAY)
 
