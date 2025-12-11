@@ -20,11 +20,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -85,53 +86,71 @@ fun FinancialsScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                FinancialCard(
-                    title = "Budget",
-                    description = "Manage your monthly budget and tracking",
-                    icon = Icons.Default.AccountBalanceWallet,
-                    color = Color(0xFF3B82F6), // Blue
-                    onClick = { navController.navigate("budget_screen") }
-                )
+                // 2x2 Metric Card Layout - First Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    FinancialMetricCard(
+                        title = "Budget",
+                        description = "Manage your monthly budget",
+                        icon = Icons.Default.AccountBalanceWallet,
+                        backgroundColor = Color(0xFF3B82F6), // Blue
+                        iconTint = Color(0xFF3B82F6),
+                        onClick = { navController.navigate("budget_screen") },
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    FinancialMetricCard(
+                        title = "Income",
+                        description = "View and manage income",
+                        icon = Icons.AutoMirrored.Default.TrendingUp,
+                        backgroundColor = Color(0xFF10B981), // Green
+                        iconTint = Color(0xFF10B981),
+                        onClick = { navController.navigate("income_screen") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
-                FinancialCard(
-                    title = "Income",
-                    description = "View and manage your income",
-                    icon = Icons.Default.Receipt,
-                    color = Color(0xFF10B981), // Green
-                    onClick = { navController.navigate("income_screen") }
-                )
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
+                // 2x2 Metric Card Layout - Second Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    FinancialMetricCard(
+                        title = "Transactions",
+                        description = "View transaction history",
+                        icon = Icons.Default.Receipt,
+                        backgroundColor = Color(0xFFEC4899), // Pink
+                        iconTint = Color(0xFFEC4899),
+                        onClick = { navController.navigate("transaction_screen") },
+                        modifier = Modifier.weight(1f)
+                    )
 
-                FinancialCard(
-                    title = "Transactions",
-                    description = "View and manage your transaction history",
-                    icon = Icons.Default.Receipt,
-                    color = Color(0xFFFFD700), // Bright Yellow
-                    onClick = { navController.navigate("transaction_screen") }
-                )
+                    FinancialMetricCard(
+                        title = "Expenses",
+                        description = "Track your expenses",
+                        icon = Icons.Default.ShoppingCart,
+                        backgroundColor = Color(0xFFEF4444), // Red
+                        iconTint = Color(0xFFEF4444),
+                        onClick = { navController.navigate("expenses_screen") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                FinancialCard(
-                    title = "Expenses",
-                    description = "Track and categorize your expenses",
-                    icon = Icons.Default.ShoppingCart,
-                    color = Color(0xFFEF4444), // red
-                    onClick = { navController.navigate("expenses_screen") }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-
-                FinancialCard(
+                // Analytics Card (Full Width)
+                FinancialMetricCard(
                     title = "Analytics",
                     description = "Analyze your financial data and trends",
                     icon = Icons.Default.PieChart,
-                    color = Color(0xFFF59E0B), // Yellow/Orange
-                    onClick = { navController.navigate("analytics_screen") }
+                    backgroundColor = Color(0xFFF59E0B), // Orange
+                    iconTint = Color(0xFFF59E0B),
+                    onClick = { navController.navigate("analytics_screen") },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -139,17 +158,19 @@ fun FinancialsScreen(
 }
 
 @Composable
-fun FinancialCard(
+fun FinancialMetricCard(
     title: String,
     description: String,
     icon: ImageVector,
-    color: Color,
+    backgroundColor: Color,
+    iconTint: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .height(160.dp)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent
@@ -161,48 +182,46 @@ fun FinancialCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // Icon with colored background
             Box(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(color.copy(alpha = 0.15f)),
+                    .background(backgroundColor.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
-                    tint = color,
+                    tint = iconTint,
                     modifier = Modifier.size(24.dp)
                 )
             }
 
-            Column(modifier = Modifier.weight(1f)) {
+            // Title and description
+            Column {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    maxLines = 2
                 )
             }
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Navigate",
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-            )
         }
     }
 }
