@@ -70,6 +70,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.bloom.datamodels.CategoryWithBudget
 import com.example.bloom.ui.theme.BloomTheme
 import com.example.bloom.viewmodel.BudgetViewModel
+import com.example.bloom.viewmodel.ExpensesViewModel
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,7 +78,8 @@ import java.util.Locale
 fun BudgetScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
-    budgetViewModel: BudgetViewModel = viewModel()
+    budgetViewModel: BudgetViewModel = viewModel(),
+    expensesViewModel: ExpensesViewModel = viewModel()
 ){
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -158,9 +160,9 @@ fun BudgetScreen(
                             )
 
                             MetricCard(
-                                title = "Spent",
-                                value = "$${String.format(Locale.US, "%.2f", budgetViewModel.totalSpent)}",
-                                subtitle = "${String.format(Locale.US, "%.1f", budgetViewModel.spentPercentage)}% of budget",
+                                title = "Expenses",
+                                value = "$${String.format(Locale.US, "%.2f", expensesViewModel.monthlyExpenses)}",
+                                subtitle = "This month",
                                 icon = Icons.Default.ShoppingCart,
                                 backgroundColor = redColor,
                                 iconTint = redColor,

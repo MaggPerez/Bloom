@@ -82,6 +82,7 @@ import com.example.bloom.datamodels.FinancialDataModels
 import com.example.bloom.ui.theme.BloomTheme
 import com.example.bloom.viewmodel.DashboardViewModel
 import com.example.bloom.viewmodel.AnalyticsViewModel
+import com.example.bloom.viewmodel.ExpensesViewModel
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.data.PieData
@@ -114,7 +115,8 @@ fun DashboardScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
     budgetViewModel: BudgetViewModel = viewModel(),
-    analyticsViewModel: AnalyticsViewModel = viewModel()
+    analyticsViewModel: AnalyticsViewModel = viewModel(),
+    expensesViewModel: ExpensesViewModel = viewModel()
 ) {
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -201,9 +203,9 @@ fun DashboardScreen(
                     )
 
                     MetricCard(
-                        title = "Spent",
-                        value = "$${String.format(Locale.US, "%.2f", budgetViewModel.totalSpent)}",
-                        subtitle = "${String.format(Locale.US, "%.1f", budgetViewModel.spentPercentage)}% of budget",
+                        title = "Expenses",
+                        value = "$${String.format(Locale.US, "%.2f", expensesViewModel.monthlyExpenses)}",
+                        subtitle = "This month",
                         icon = Icons.Default.ShoppingCart,
                         backgroundColor = redColor,
                         iconTint = redColor,
