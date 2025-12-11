@@ -35,3 +35,5 @@ val Gray600 = Color(0xFF52525B)
 val Gray700 = Color(0xFF3F3F46)
 val Gray800 = Color(0xFF27272A)
 val Gray900 = Color(0xFF18181B)
+
+val Orange = Color(0xFFFFA500) // Standard Orange color

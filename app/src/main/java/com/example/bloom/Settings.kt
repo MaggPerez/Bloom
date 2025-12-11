@@ -31,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.ui.graphics.Color
+import com.example.bloom.ui.theme.Orange
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
@@ -327,6 +328,7 @@ fun ProfileFieldReadOnly(
             modifier = Modifier.fillMaxWidth(),
             enabled = false,
             readOnly = true,
+            shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 disabledTextColor = MaterialTheme.colorScheme.onSurface,
                 disabledBorderColor = MaterialTheme.colorScheme.outline
@@ -361,6 +363,7 @@ fun EditableProfileField(
                 value = editingValue,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 trailingIcon = {
                     Row {
                         IconButton(onClick = onSaveClick) {
@@ -389,6 +392,7 @@ fun EditableProfileField(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = false,
                 readOnly = true,
+                shape = RoundedCornerShape(12.dp),
                 trailingIcon = {
                     IconButton(onClick = onEditClick) {
                         Icon(
@@ -435,6 +439,7 @@ fun EditableUsernameField(
                 value = editingValue,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 trailingIcon = {
                     Row {
                         IconButton(onClick = onSaveClick) {
@@ -472,6 +477,7 @@ fun EditableUsernameField(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = false,
                 readOnly = true,
+                shape = RoundedCornerShape(12.dp),
                 trailingIcon = {
                     IconButton(onClick = onEditClick) {
                         Icon(
@@ -503,7 +509,8 @@ fun ThemeSelector(
             description = "Always use light theme",
             icon = Icons.Default.LightMode,
             isSelected = selectedTheme == "light",
-            onClick = { onThemeSelected("light") }
+            onClick = { onThemeSelected("light") },
+            iconColor = Orange
         )
 
         ThemeOption(
@@ -511,7 +518,8 @@ fun ThemeSelector(
             description = "Always use dark theme",
             icon = Icons.Default.DarkMode,
             isSelected = selectedTheme == "dark",
-            onClick = { onThemeSelected("dark") }
+            onClick = { onThemeSelected("dark") },
+            iconColor = Color.Blue
         )
 
         ThemeOption(
@@ -519,7 +527,8 @@ fun ThemeSelector(
             description = "Follow system theme",
             icon = Icons.Default.SettingsBrightness,
             isSelected = selectedTheme == "system",
-            onClick = { onThemeSelected("system") }
+            onClick = { onThemeSelected("system") },
+            iconColor = Color.White
         )
     }
 }
@@ -530,14 +539,15 @@ fun ThemeOption(
     description: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    iconColor: Color
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        color = Color.Transparent,
         border = BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
@@ -553,7 +563,7 @@ fun ThemeOption(
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = iconColor,
                 modifier = Modifier.size(28.dp)
             )
 
@@ -565,12 +575,12 @@ fun ThemeOption(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
