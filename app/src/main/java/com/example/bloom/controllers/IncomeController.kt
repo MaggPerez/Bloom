@@ -264,23 +264,15 @@ class IncomeController {
                 val userId = getUserId()
                     ?: return@withContext Result.failure(Exception("User not authenticated"))
 
-                val response = supabase.from("income")
-                    .select(columns = Columns.raw("amount")) {
-                        filter {
-                            eq("user_id", userId)
-                            gte("income_date", startDate)
-                            lte("income_date", endDate)
-                        }
-                    }
+                val incomeList = getIncomeByDateRange(startDate, endDate).getOrNull()
+                    ?: return@withContext Result.success(0.0)
 
-                val incomes = response.decodeList<Map<String, Any>>()
-                val total = incomes.sumOf {
-                    (it["amount"] as? Number)?.toDouble() ?: 0.0
-                }
+                val total = incomeList.sumOf { it.amount }
 
                 Result.success(total)
             } catch (e: Exception) {
-                Result.success(0.0)
+                e.printStackTrace()
+                Result.failure(e)
             }
         }
     }

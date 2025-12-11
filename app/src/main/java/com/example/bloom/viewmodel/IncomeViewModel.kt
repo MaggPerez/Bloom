@@ -157,7 +157,10 @@ class IncomeViewModel : ViewModel() {
                 onSuccess = { total ->
                     totalIncomeThisMonth = total
                 },
-                onFailure = { }
+                onFailure = { e ->
+                    e.printStackTrace()
+                    totalIncomeThisMonth = 0.0
+                }
             )
 
             // Load income by source for current month
@@ -169,7 +172,10 @@ class IncomeViewModel : ViewModel() {
                 onSuccess = { sourceMap ->
                     incomeBySource = sourceMap
                 },
-                onFailure = { }
+                onFailure = { e ->
+                    e.printStackTrace()
+                    incomeBySource = emptyMap()
+                }
             )
 
             // Load average monthly income
@@ -177,7 +183,10 @@ class IncomeViewModel : ViewModel() {
                 onSuccess = { average ->
                     averageMonthlyIncome = average
                 },
-                onFailure = { }
+                onFailure = { e ->
+                    e.printStackTrace()
+                    averageMonthlyIncome = 0.0
+                }
             )
 
             loadRecurringIncome()
