@@ -113,12 +113,18 @@ fun CsvImportScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("CSV Import") },
+                title = { Text(
+                    text = "CSV Import",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )  },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = PrimaryPurple
                         )
                     }
                 },
