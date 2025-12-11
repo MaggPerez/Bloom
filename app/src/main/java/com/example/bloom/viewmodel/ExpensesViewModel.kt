@@ -148,4 +148,20 @@ class ExpensesViewModel : ViewModel() {
             }
         }
     }
+
+    fun deleteExpenses(
+        expenseIds: List<String>,
+        onSuccess: () -> Unit,
+        onError: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val success = controller.deleteExpenses(expenseIds)
+            if (success) {
+                loadExpenses()
+                onSuccess()
+            } else {
+                onError()
+            }
+        }
+    }
 }

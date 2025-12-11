@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.Home
@@ -137,6 +138,10 @@ fun ExpensesScreen(
     val scrollState = rememberScrollState()
     var showAddExpenseDialog by remember { mutableStateOf(false) }
     var expenseToEdit by remember { mutableStateOf<ExpenseData?>(null) }
+    
+    // Selection Mode State
+    var isSelectionMode by remember { mutableStateOf(false) }
+    val selectedExpenseIds = remember { androidx.compose.runtime.mutableStateListOf<String>() }
 
     // Define colors for metrics - matching Dashboard
     val blueColor = Color(0xFF3B82F6)
@@ -207,19 +212,67 @@ fun ExpensesScreen(
                         color = MaterialTheme.colorScheme.onBackground
                     )
 
-                    IconButton(
-                        onClick = { showAddExpenseDialog = true },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(blueColor)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add Expense",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
+                        // Delete Text Button (appears when in selection mode)
+                        if (isSelectionMode && selectedExpenseIds.isNotEmpty()) {
+                            TextButton(
+                                onClick = {
+                                    viewModel.deleteExpenses(
+                                        expenseIds = selectedExpenseIds.toList(),
+                                        onSuccess = {
+                                            selectedExpenseIds.clear()
+                                            isSelectionMode = false
+                                        },
+                                        onError = { /* TODO: Show error message */ }
+                                    )
+                                }
+                            ) {
+                                Text(
+                                    text = "Delete",
+                                    color = Color(0xFFEF4444),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        // Trash Button (Toggle Selection Mode)
+                        IconButton(
+                            onClick = {
+                                isSelectionMode = !isSelectionMode
+                                if (!isSelectionMode) {
+                                    selectedExpenseIds.clear()
+                                }
+                            },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(if (isSelectionMode) Color(0xFFEF4444).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Selection Mode",
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { showAddExpenseDialog = true },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(blueColor)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Expense",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
 
@@ -239,7 +292,16 @@ fun ExpensesScreen(
                     // Expenses Grid (2x2 for now)
                     ExpensesGrid(
                         expenses = viewModel.expenses,
-                        onEditExpense = { expense -> expenseToEdit = expense }
+                        onEditExpense = { expense -> expenseToEdit = expense },
+                        isSelectionMode = isSelectionMode,
+                        selectedIds = selectedExpenseIds,
+                        onToggleSelection = { id ->
+                            if (selectedExpenseIds.contains(id)) {
+                                selectedExpenseIds.remove(id)
+                            } else {
+                                selectedExpenseIds.add(id)
+                            }
+                        }
                     )
                 }
             }
@@ -376,7 +438,10 @@ fun ExpenseMetricItem(
 fun ExpensesGrid(
     expenses: List<ExpenseData>,
     onEditExpense: (ExpenseData) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSelectionMode: Boolean = false,
+    selectedIds: List<String> = emptyList(),
+    onToggleSelection: (String) -> Unit = {}
 ) {
     // Create a 2x2 grid for now
     Column(
@@ -391,8 +456,16 @@ fun ExpensesGrid(
                 rowExpenses.forEach { expense ->
                     ExpenseCard(
                         expense = expense,
-                        onClick = { onEditExpense(expense) },
-                        modifier = Modifier.weight(1f)
+                        onClick = { 
+                             if (isSelectionMode) {
+                                 expense.id?.let { onToggleSelection(it) }
+                             } else {
+                                 onEditExpense(expense) 
+                             }
+                        },
+                        modifier = Modifier.weight(1f),
+                        isSelectionMode = isSelectionMode,
+                        isSelected = selectedIds.contains(expense.id)
                     )
                 }
                 // Fill remaining space if row has only 1 item
@@ -425,7 +498,9 @@ fun ExpensesGrid(
 fun ExpenseCard(
     expense: ExpenseData,
     onClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSelectionMode: Boolean = false,
+    isSelected: Boolean = false
 ) {
     // Parse the stored hex color or default to primary
     val cardColor = if (expense.color_hex != null) parseColor(expense.color_hex) else MaterialTheme.colorScheme.primary
@@ -434,86 +509,113 @@ fun ExpenseCard(
         modifier = modifier.clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            if (isSelected) 2.dp else 1.dp,
+            if (isSelected) Color(0xFFEF4444) else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth()
-        ) {
-            // Top Row: Icon + Amount
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .fillMaxWidth()
             ) {
-                // Icon
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(cardColor.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
+                // Top Row: Icon + Amount
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
-                    if (expense.icon_name != null && defaultIcons.containsKey(expense.icon_name)) {
-                        Icon(
-                            imageVector = defaultIcons[expense.icon_name]!!,
-                            contentDescription = expense.icon_name,
-                            tint = cardColor,
-                            modifier = Modifier.size(20.dp)
+                    // Icon
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(cardColor.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (expense.icon_name != null && defaultIcons.containsKey(expense.icon_name)) {
+                            Icon(
+                                imageVector = defaultIcons[expense.icon_name]!!,
+                                contentDescription = expense.icon_name,
+                                tint = cardColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            // Default fallback
+                            Icon(
+                                imageVector = Icons.Default.List,
+                                contentDescription = "Expense",
+                                tint = cardColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    // Amount
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = String.format(java.util.Locale.US, "$%.2f", expense.amount),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                    } else {
-                        // Default fallback
-                        Icon(
-                            imageVector = Icons.Default.List,
-                            contentDescription = "Expense",
-                            tint = cardColor,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        if (!expense.recurring_frequency.isNullOrBlank()) {
+                            Text(
+                                text = expense.recurring_frequency,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
                     }
                 }
 
-                // Amount
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = String.format(java.util.Locale.US, "$%.2f", expense.amount),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    if (!expense.recurring_frequency.isNullOrBlank()) {
-                        Text(
-                            text = expense.recurring_frequency,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Bottom Area: Name + Date
+                Text(
+                    text = expense.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Due: ${expense.due_date}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+
+            // Selection Checkmark Overlay
+            if (isSelectionMode) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(8.dp)
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) Color(0xFFEF4444) else MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Selected",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
                         )
+                    } else {
+                         // Empty circle border effect (optional, or just gray background)
+                         // Currently just gray background
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Bottom Area: Name + Date
-            Text(
-                text = expense.name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
-                text = "Due: ${expense.due_date}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
         }
     }
 }

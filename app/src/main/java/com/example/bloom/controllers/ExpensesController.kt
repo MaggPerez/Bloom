@@ -56,4 +56,23 @@ class ExpensesController {
             }
         }
     }
+
+    suspend fun deleteExpenses(expenseIds: List<String>): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                expenseIds.forEach { id ->
+                    supabase.from("expenses")
+                        .delete {
+                            filter {
+                                eq("id", id)
+                            }
+                        }
+                }
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
 }
