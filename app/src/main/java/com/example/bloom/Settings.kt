@@ -547,6 +547,7 @@ fun ThemeOption(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
         color = Color.Transparent,
         border = BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
