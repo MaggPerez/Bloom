@@ -1,5 +1,6 @@
 package com.example.bloom
 
+import android.graphics.Color as AndroidColor
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
@@ -49,6 +51,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -71,12 +74,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.bloom.datamodels.FinancialDataModels
 import com.example.bloom.ui.theme.BloomTheme
 import com.example.bloom.viewmodel.DashboardViewModel
+import com.example.bloom.viewmodel.AnalyticsViewModel
+import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.components.Legend
+import com.github.mikephil.charting.data.PieData
+import com.github.mikephil.charting.data.PieDataSet
+import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.formatter.PercentFormatter
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
@@ -102,7 +113,8 @@ val user = supabase.auth.currentUserOrNull()
 fun DashboardScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
-    budgetViewModel: BudgetViewModel = viewModel()
+    budgetViewModel: BudgetViewModel = viewModel(),
+    analyticsViewModel: AnalyticsViewModel = viewModel()
 ) {
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -233,9 +245,9 @@ fun DashboardScreen(
 
 
                 //spending pie chart breakdown
-                SpendingPieChart(
-                    categories = budgetViewModel.categories,
-                    totalSpent = budgetViewModel.totalSpent
+                SpendingPieChartAnalytics(
+                    categoryBreakdown = analyticsViewModel.categoryBreakdown,
+                    totalExpenses = analyticsViewModel.totalExpenses
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -425,12 +437,23 @@ fun SpendingPieChart(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(
-                text = "Spending Breakdown",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Spending Breakdown",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Icon(
+                    imageVector = Icons.Default.PieChart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -443,28 +466,84 @@ fun SpendingPieChart(
                     modifier = Modifier.padding(vertical = 32.dp)
                 )
             } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    PieChart(
-                        categories = categories,
-                        modifier = Modifier.size(160.dp)
-                    )
+                // Only show categories with spending > 0
+                val categoriesWithSpending = categories.filter { it.spent > 0 }
 
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        categories.forEach { category ->
-                            val percentage = if (totalSpent > 0) (category.spent / totalSpent * 100).toInt() else 0
-                            if (percentage > 0) {
-                                LegendItem(
-                                    color = category.color,
-                                    label = category.name,
-                                    percentage = percentage
-                                )
-                            }
+                // MPAndroidChart Pie Chart
+                AndroidView(
+                    factory = { context ->
+                        PieChart(context).apply {
+                            description.isEnabled = false
+                            isDrawHoleEnabled = true
+                            holeRadius = 40f
+                            transparentCircleRadius = 45f
+                            setDrawCenterText(true)
+                            centerText = "Categories"
+                            setCenterTextSize(14f)
+                            setCenterTextColor(AndroidColor.GRAY)
+
+                            legend.isEnabled = true
+                            legend.verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
+                            legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+                            legend.orientation = Legend.LegendOrientation.HORIZONTAL
+                            legend.setDrawInside(false)
+                            legend.textColor = AndroidColor.GRAY
+                            legend.textSize = 10f
+                            legend.formSize = 10f
+                            legend.xEntrySpace = 5f
+                            legend.yEntrySpace = 2f
+
+                            setEntryLabelColor(AndroidColor.WHITE)
+                            setEntryLabelTextSize(11f)
+
+                            setTouchEnabled(true)
+                            rotationAngle = 0f
+                            isRotationEnabled = true
+                            isHighlightPerTapEnabled = true
+                        }
+                    },
+                    update = { chart ->
+                        val entries = categoriesWithSpending.map { category ->
+                            PieEntry(
+                                category.spent.toFloat(),
+                                category.name
+                            )
+                        }
+
+                        val dataSet = PieDataSet(entries, "").apply {
+                            colors = categoriesWithSpending.map { it.color.toArgb() }
+                            sliceSpace = 2f
+                            selectionShift = 5f
+                            valueTextColor = AndroidColor.WHITE
+                            valueTextSize = 11f
+                            valueFormatter = PercentFormatter(chart)
+                        }
+
+                        chart.data = PieData(dataSet)
+                        chart.setUsePercentValues(true)
+                        chart.animateY(800)
+                        chart.invalidate()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Category List
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    categoriesWithSpending.forEach { category ->
+                        val percentage = if (totalSpent > 0) (category.spent / totalSpent * 100) else 0.0
+                        if (percentage > 0) {
+                            LegendItem(
+                                color = category.color,
+                                label = category.name,
+                                percentage = percentage.toInt(),
+                                amount = category.spent
+                            )
                         }
                     }
                 }
@@ -474,78 +553,178 @@ fun SpendingPieChart(
 }
 
 
-
+// Analytics version of SpendingPieChart using CategoryBreakdownData
 @Composable
-fun PieChart(
-    categories: List<com.example.bloom.datamodels.CategoryWithBudget>,
+fun SpendingPieChartAnalytics(
+    categoryBreakdown: List<com.example.bloom.datamodels.CategoryBreakdownData>,
+    totalExpenses: Double,
     modifier: Modifier = Modifier
 ) {
-    // Only show categories with spending > 0
-    val categoriesWithSpending = categories.filter { it.spent > 0 }
-    val total = categoriesWithSpending.sumOf { it.spent }
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Spending Breakdown",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Icon(
+                    imageVector = Icons.Default.PieChart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
 
-    Canvas(modifier = modifier) {
-        val canvasSize = size.minDimension
-        val radius = canvasSize / 2f
-        val strokeWidth = radius * 0.4f
+            Spacer(modifier = Modifier.height(16.dp))
 
-        var startAngle = -90f
+            // Show empty state if no categories with spending
+            if (categoryBreakdown.isEmpty() || totalExpenses == 0.0) {
+                Text(
+                    text = "No spending data yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(vertical = 32.dp)
+                )
+            } else {
+                // Only show categories with spending > 0
+                val categoriesWithSpending = categoryBreakdown.filter { it.totalSpent > 0 }
 
-        categoriesWithSpending.forEach { category ->
-            val sweepAngle = if (total > 0) ((category.spent / total) * 360).toFloat() else 0f
+                // MPAndroidChart Pie Chart
+                AndroidView(
+                    factory = { context ->
+                        PieChart(context).apply {
+                            description.isEnabled = false
+                            isDrawHoleEnabled = true
+                            holeRadius = 40f
+                            transparentCircleRadius = 45f
+                            setDrawCenterText(true)
+                            centerText = "Categories"
+                            setCenterTextSize(14f)
+                            setCenterTextColor(AndroidColor.GRAY)
 
-            drawArc(
-                color = category.color,
-                startAngle = startAngle,
-                sweepAngle = sweepAngle,
-                useCenter = false,
-                topLeft = Offset(
-                    (size.width - canvasSize) / 2,
-                    (size.height - canvasSize) / 2
-                ),
-                size = Size(canvasSize, canvasSize),
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-            )
+                            legend.isEnabled = true
+                            legend.verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
+                            legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+                            legend.orientation = Legend.LegendOrientation.HORIZONTAL
+                            legend.setDrawInside(false)
+                            legend.textColor = AndroidColor.GRAY
+                            legend.textSize = 10f
+                            legend.formSize = 10f
+                            legend.xEntrySpace = 5f
+                            legend.yEntrySpace = 2f
 
-            startAngle += sweepAngle
+                            setEntryLabelColor(AndroidColor.WHITE)
+                            setEntryLabelTextSize(11f)
+
+                            setTouchEnabled(true)
+                            rotationAngle = 0f
+                            isRotationEnabled = true
+                            isHighlightPerTapEnabled = true
+                        }
+                    },
+                    update = { chart ->
+                        val entries = categoriesWithSpending.map { category ->
+                            PieEntry(
+                                category.totalSpent.toFloat(),
+                                category.categoryName
+                            )
+                        }
+
+                        val dataSet = PieDataSet(entries, "").apply {
+                            colors = categoriesWithSpending.map { it.categoryColor.toArgb() }
+                            sliceSpace = 2f
+                            selectionShift = 5f
+                            valueTextColor = AndroidColor.WHITE
+                            valueTextSize = 11f
+                            valueFormatter = PercentFormatter(chart)
+                        }
+
+                        chart.data = PieData(dataSet)
+                        chart.setUsePercentValues(true)
+                        chart.animateY(800)
+                        chart.invalidate()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Category List
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    categoriesWithSpending.forEach { category ->
+                        LegendItem(
+                            color = category.categoryColor,
+                            label = category.categoryName,
+                            percentage = category.percentage.toInt(),
+                            amount = category.totalSpent
+                        )
+                    }
+                }
+            }
         }
-
-        //center circle for donut effect
-        drawCircle(
-            color = Color.Transparent,
-            radius = radius - strokeWidth,
-            center = center
-        )
     }
 }
-
 
 @Composable
 fun LegendItem(
     color: Color,
     label: String,
     percentage: Int,
+    amount: Double,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier.size(12.dp).clip(CircleShape).background(color)
-        )
-
-        Column{
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(color, RoundedCornerShape(2.dp))
+            )
+            Column {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+        Column(
+            horizontalAlignment = Alignment.End
+        ) {
             Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
+                text = "$${String.format("%.2f", amount)}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = "$percentage%",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
