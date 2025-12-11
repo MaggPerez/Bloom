@@ -19,9 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -93,6 +90,7 @@ fun BloomAiScreen(
                 modifier = Modifier.fillMaxSize()
                     .padding(paddingValues)
                     .windowInsetsPadding(WindowInsets.captionBar)
+                    .verticalScroll(scrollState)
                     .padding(16.dp)
             ) {
                 Text(text = "Bloom A.I",
@@ -103,27 +101,18 @@ fun BloomAiScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                //2x3 grid of A.I feature cards
-                LazyVerticalGrid(
-                    modifier = Modifier,
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    userScrollEnabled = true
-                    ) {
-
-                    items(aiFeatures.size) { item ->
+                // Vertical stack of A.I feature cards
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    aiFeatures.forEach { feature ->
                         AIFeatureCard(
-                            feature = aiFeatures[item],
+                            feature = feature,
                             // todo add missing routes
-                            onClick = { navController.navigate(aiFeatures[item].route ?: "bloom_ai_screen") },
-                            modifier = Modifier.weight(1f)
+                            onClick = { navController.navigate(feature.route ?: "bloom_ai_screen") }
                         )
                     }
                 }
-
-
             }
         }
     }
