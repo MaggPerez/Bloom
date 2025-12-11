@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Build
@@ -41,6 +42,7 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -95,7 +97,10 @@ val defaultIcons = mapOf(
     "Transport" to Icons.Default.DirectionsCar,
     "Utilities" to Icons.Default.Build,
     "Health" to Icons.Default.LocalHospital,
-    "Education" to Icons.Default.School
+    "Education" to Icons.Default.School,
+    "TV/Entertainment" to Icons.Default.Tv,
+    "Bills" to Icons.Default.AttachMoney,
+    "Other" to Icons.AutoMirrored.Default.List
 )
 
 val expenseColors = listOf(
