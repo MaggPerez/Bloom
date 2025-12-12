@@ -517,11 +517,17 @@ fun TransactionCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Color indicator
+                val indicatorColor = if (transaction.categoryColorHex == null) {
+                    if (transaction.isExpense) Color(0xFFEF4444) else Color(0xFF10B981)
+                } else {
+                    transaction.categoryColor
+                }
+
                 Box(
                     modifier = Modifier
                         .size(12.dp)
                         .clip(CircleShape)
-                        .background(transaction.categoryColor)
+                        .background(indicatorColor)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
 
