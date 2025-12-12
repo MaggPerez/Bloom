@@ -309,23 +309,27 @@ fun SummaryCards(
                 title = "Income",
                 amount = viewModel.formatCurrency(totalIncome),
                 icon = Icons.Default.TrendingUp,
-                color = Color(0xFF10B981),
+                iconColor = Color(0xFF10B981),
+                amountColor = Color(0xFF10B981),
                 modifier = Modifier.weight(1f)
             )
             SummaryCard(
                 title = "Expenses",
                 amount = viewModel.formatCurrency(totalExpenses),
                 icon = Icons.Default.TrendingDown,
-                color = Color(0xFFEF4444),
+                iconColor = Color(0xFFEF4444),
+                amountColor = Color(0xFFEF4444),
                 modifier = Modifier.weight(1f)
             )
         }
 
+        val netSavingsColor = if (netSavings >= 0) Color(0xFF3B82F6) else Color(0xFFF59E0B)
         SummaryCard(
             title = "Net Savings",
             amount = viewModel.formatCurrency(netSavings),
             icon = Icons.Default.Savings,
-            color = if (netSavings >= 0) Color(0xFF3B82F6) else Color(0xFFF59E0B),
+            iconColor = netSavingsColor,
+            amountColor = netSavingsColor,
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -336,8 +340,9 @@ fun SummaryCard(
     title: String,
     amount: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    color: Color,
-    modifier: Modifier = Modifier
+    iconColor: Color,
+    modifier: Modifier = Modifier,
+    amountColor: Color = iconColor
 ) {
     Card(
         modifier = modifier,
@@ -366,13 +371,13 @@ fun SummaryCard(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(color.copy(alpha = 0.15f)),
+                        .background(iconColor.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = title,
-                        tint = color,
+                        tint = iconColor,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -385,7 +390,7 @@ fun SummaryCard(
                 text = amount,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = amountColor
             )
         }
     }
