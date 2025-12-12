@@ -81,12 +81,25 @@ Bloom goes beyond basic expense tracking by leveraging Google's Gemini AI to pro
 - Custom icons and color coding
 - Tag-based organization
 - Recurring frequency options (Daily, Weekly, Monthly, Yearly)
+- **Smart average calculations**:
+    - Automatically calculates per-month and per-year expense averages based on recurring frequency
+    - Daily expenses annualized (×365), Weekly (×52), Monthly (×12), Yearly (×1)
+    - Provides accurate financial projections and budgeting insights
+- **Batch delete functionality**:
+    - Selection mode with red-themed UI for safe deletion
+    - Multi-select expenses with visual confirmation (red borders and checkmarks)
+    - Delete button appears only when expenses are selected
+    - Prevents accidental deletions with clear visual indicators
 
 **Income Features:**
 - Multiple income source tracking (Salary, Freelance, Investment, Gift, etc.)
 - Recurring income support
 - Income categorization
-- Monthly income aggregation
+- **Real-time income analytics**:
+    - "This Month" card shows total income for current month
+    - "Average" card displays monthly average over last 6 months
+    - Automatic updates when new income sources are added
+- Robust error handling for accurate financial reporting
 
 ### 6. Analytics & Reporting
 - Time period filtering (Weekly, Monthly, Yearly, Custom Range)
