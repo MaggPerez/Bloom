@@ -102,23 +102,37 @@ Bloom goes beyond basic expense tracking by leveraging Google's Gemini AI to pro
 - Robust error handling for accurate financial reporting
 
 ### 6. Analytics & Reporting
-- Time period filtering (Weekly, Monthly, Yearly, Custom Range)
-- Income vs. Expenses trend analysis
-- Category spending breakdown with visualizations
-- Budget adherence tracking
-- Recurring bills summary
-- Actionable spending insights
-- **PDF report generation** using iText library
-- Export analytics data to CSV
+- **Time period filtering**: Weekly, Monthly, Yearly, Custom Range
+- **Income vs. Expenses trend analysis**: Line chart visualization showing monthly trends
+- **Category spending breakdown**: Interactive pie chart with percentages and transaction counts
+- **Budget Performance tracking**: Grouped bar chart displaying Budget vs. Expenses side-by-side
+    - Blue bars represent budget amounts
+    - Green/Red bars represent actual expenses (green when under budget, red when over)
+    - Proper X-axis configuration for clear visualization of both datasets
+    - Monthly comparison with detailed budget adherence cards
+- **Recurring bills summary**: Upcoming bills with due dates and frequency
+- **Smart spending insights**: AI-powered analysis and recommendations
+- **PDF report generation**: Comprehensive reports using iText library
+- **Export analytics data**: CSV export functionality
 
 **Analytics Metrics Provided:**
-- Total income and expenses
-- Net savings
-- Average daily spending
-- Top spending category
+- Total income and expenses (sourced from `income` and `expenses` tables)
+- Net savings calculation
+- **Average daily spending**: Calculated as total expenses divided by days in selected period
+    - Accurately correlates with expense data from `expenses` table
+- Top spending category with total amount and percentage
 - Most frequent transaction category
-- Largest transaction identification
-- Budget health status (Excellent, Good, Warning, Critical)
+- Largest transaction identification with details
+- **Budget health status**: Dynamically calculated from actual expense data
+    - **EXCELLENT**: < 70% of budget spent
+    - **GOOD**: 70-85% of budget spent
+    - **WARNING**: 85-95% of budget spent
+    - **CRITICAL**: > 95% of budget spent (over budget)
+    - Uses real-time data from `expenses` table for accurate health assessment
+
+**Data Sources:**
+- All analytics use data from dedicated `income` and `expenses` tables via `IncomeController` and `ExpensesController`
+- Ensures consistency and accuracy across all financial reporting features
 
 ### 7. AI-Powered Features (Bloom AI)
 
