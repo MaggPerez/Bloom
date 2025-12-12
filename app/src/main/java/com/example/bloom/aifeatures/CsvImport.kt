@@ -538,7 +538,7 @@ fun TransactionPreviewCard(
     greenColor: Color,
     redColor: Color
 ) {
-    val isExpense = transaction.transactionType.lowercase() == "expense"
+    val isExpense = transaction.transactionType.lowercase() == "expenses"
     val typeColor = if (isExpense) redColor else greenColor
 
     Card(
@@ -576,11 +576,10 @@ fun TransactionPreviewCard(
                         )
                     }
                 }
-
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
-                    text = "${if (isExpense) "-" else "+"}${transaction.amount}",
+                    text = "${if (isExpense) "-" else "+"}$${transaction.amount}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = typeColor
