@@ -33,9 +33,5 @@ interface RetrofitAPI {
         @Part file: MultipartBody.Part
     ): com.example.bloom.aifeatures.CsvImportResponse
 
-    @GET("getGeminiResponse")
-    suspend fun getGeminiResponse(): AIFeatureDataModel.AIGenerativeDataModel
 
-
-    //todo: connect everything, fix UI's, and you're DONE
 }
