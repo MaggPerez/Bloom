@@ -733,7 +733,7 @@ fun BudgetAdherenceSection(
                         valueTextSize = 9f
                     }
 
-                    val spentDataSet = BarDataSet(spentEntries, "Spent").apply {
+                    val spentDataSet = BarDataSet(spentEntries, "Expenses").apply {
                         setColors(budgetData.map { data ->
                             if (data.isOverBudget) {
                                 AndroidColor.rgb(239, 68, 68) // Red
@@ -746,10 +746,22 @@ fun BudgetAdherenceSection(
                     }
 
                     val barData = BarData(budgetDataSet, spentDataSet)
-                    barData.barWidth = 0.35f
+                    val barWidth = 0.35f
+                    val groupSpace = 0.3f
+                    val barSpace = 0.05f // Small space between bars in same group
+
+                    barData.barWidth = barWidth
 
                     chart.data = barData
-                    chart.groupBars(0f, 0.3f, 0f)
+
+                    // Configure X-axis for grouped bars
+                    val groupCount = budgetData.size
+                    val groupWidth = groupSpace + (barWidth + barSpace) * 2 // 2 datasets
+
+                    chart.xAxis.axisMinimum = 0f
+                    chart.xAxis.axisMaximum = 0f + groupWidth * groupCount
+                    chart.groupBars(0f, groupSpace, barSpace)
+
                     chart.xAxis.valueFormatter = IndexAxisValueFormatter(budgetData.map { it.month })
                     chart.xAxis.labelCount = budgetData.size
                     chart.xAxis.setCenterAxisLabels(true)
