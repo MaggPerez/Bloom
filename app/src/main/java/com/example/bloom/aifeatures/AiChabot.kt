@@ -1,7 +1,9 @@
 package com.example.bloom.aifeatures
 
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -104,7 +106,7 @@ fun AiChatbotScreen(
     ) { uri: Uri? ->
         uri?.let {
             selectedFileUri = it
-            selectedFileName = it.lastPathSegment ?: "document"
+            selectedFileName = getFileName(context, it)
         }
     }
 
@@ -474,6 +476,17 @@ fun copyUriToTempFile(context: Context, uri: Uri): File? {
 fun getMimeType(context: Context, uri: Uri): String {
     val type = context.contentResolver.getType(uri)
     return if (type == "application/pdf") "pdf" else "csv"
+}
+
+fun getFileName(context: Context, uri: Uri): String {
+    var fileName = "document"
+    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        if (nameIndex != -1 && cursor.moveToFirst()) {
+            fileName = cursor.getString(nameIndex)
+        }
+    }
+    return fileName
 }
 
 @Preview
