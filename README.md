@@ -141,12 +141,24 @@ Bloom goes beyond basic expense tracking by leveraging Google's Gemini AI to pro
 - Visual progress indicators with color-coded metrics
 
 #### 7.3 Smart Insights
-- AI-powered spending pattern analysis
-- Trend identification and forecasting
+- **Data Sources**: Analyzes data from dedicated Income and Expenses tables
+    - **Income Analysis**: Tracks income sources, amounts, and patterns from the `income` table
+    - **Expense Analysis**: Monitors expense categories, due dates, and spending habits from the `expenses` table
+    - **Separated Tracking**: Uses `IncomeController` and `ExpensesController` for precise financial data retrieval
+- **Automated Insight Generation**:
+    - Top spending categories grouped by expense name
+    - Peak spending day patterns based on expense due dates
+    - Largest expense identification and alerts
+    - Income vs. expense analysis with savings rate calculations
+    - Transaction frequency tracking (combined income and expense entries)
+- **AI-Powered Analysis**:
+    - Google Gemini 2.5 Flash integration for intelligent insights
+    - Comprehensive financial summary including top income sources and top expenses
+    - Personalized recommendations tailored to spending and income patterns
 - Budget optimization suggestions
 - Savings opportunity detection
-- Personalized, actionable recommendations
 - Supportive messaging for low-income users
+- Real-time updates when new income or expenses are added
 
 #### 7.4 CSV Import with AI Validation
 - Upload CSV transaction files
@@ -709,19 +721,19 @@ Currently, the FastAPI server does not implement authentication. In production, 
 
 ### Endpoint: `POST /bloomLogic/insights`
 
-**Purpose**: Generate smart financial insights from user's spending data.
+**Purpose**: Generate smart financial insights from user's income and expense data.
 
 **Request:**
 ```json
 {
-  "message": "Current Budget: $2000\nTotal Spent: $1850\nTop Category: Dining Out ($450)\n..."
+  "message": "Financial Summary for DECEMBER 2024:\nTotal Income: $2500.00\nTotal Expenses: $1850.00\nNet Savings: $650.00\n\nTop Income Sources:\n- Salary: $2000.00 (80%)\n- Freelance: $500.00 (20%)\n\nTop 5 Expenses:\n- Rent: $800.00 (43%)\n- Groceries: $300.00 (16%)\n- Utilities: $150.00 (8%)..."
 }
 ```
 
 **Response:**
 ```json
 {
-  "message": "1. Your dining expenses are 24% of your budget - consider cooking at home more often.\n2. You're doing great staying within budget! You have $150 left this month.\n3. Your grocery spending is efficient at $280/month..."
+  "message": "1. Excellent savings rate at 26%! You're building a healthy financial buffer.\n2. Your rent is 32% of your total income - this is within the recommended 30-35% range.\n3. Your grocery spending is efficient at $300/month for a single person.\n4. Consider setting aside your freelance income for taxes and emergency savings..."
 }
 ```
 
@@ -729,17 +741,24 @@ Currently, the FastAPI server does not implement authentication. In production, 
 > "You are a Financial Insights Advisor for college students and low-income individuals. Provide 3-4 specific, actionable insights based on spending patterns. Focus on: spending patterns, budget optimization, savings opportunities, and financial health. Be encouraging and supportive."
 
 **Input Data Provided:**
-- Monthly budget and spending
-- Category-wise breakdown
-- Income vs. expenses
-- Savings rate
-- Recent transactions
+- **Income Data**: Top income sources with amounts and percentages
+- **Expense Data**: Top expenses grouped by name with amounts and percentages
+- **Summary Metrics**:
+    - Total monthly income
+    - Total monthly expenses
+    - Net savings amount
+    - Savings rate percentage
+
+**Data Source**:
+- Fetched from `income` table via `IncomeController`
+- Fetched from `expenses` table via `ExpensesController`
+- Filtered to current month's data
 
 **Output Format**:
 - 3-4 numbered insights
 - Specific percentages and dollar amounts
-- Actionable recommendations
-- Positive reinforcement for good habits
+- Actionable recommendations based on income sources and expense categories
+- Positive reinforcement for good financial habits
 
 **Usage in App**: Bloom A.I screen → Smart Insights feature
 
