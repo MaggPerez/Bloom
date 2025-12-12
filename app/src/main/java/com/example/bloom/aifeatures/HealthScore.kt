@@ -119,7 +119,7 @@ fun HealthScoreScreen(
                         }
 
                         Text(
-                            text = "Financial Health Score",
+                            text = "Health Score",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
