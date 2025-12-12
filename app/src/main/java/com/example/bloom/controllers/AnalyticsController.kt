@@ -419,10 +419,26 @@ class AnalyticsController {
         return try {
             val budgetController = BudgetController()
 
+            // Get current month budget
             val budget = budgetController.getCurrentMonthBudget().getOrNull()
-                ?: return BudgetHealthStatus.EXCELLENT
+                ?: return BudgetHealthStatus.EXCELLENT // No budget set, assume excellent
 
-            val spent = budgetController.getTotalSpentThisMonth().getOrNull() ?: 0.0
+            // Get actual expenses from expenses table for current month
+            val currentDate = LocalDate.now()
+            val startOfMonth = currentDate.withDayOfMonth(1).toString()
+            val endOfMonth = currentDate.withDayOfMonth(currentDate.lengthOfMonth()).toString()
+
+            val expenses = supabase.from("expenses")
+                .select() {
+                    filter {
+                        eq("user_id", userId)
+                        gte("due_date", startOfMonth)
+                        lte("due_date", endOfMonth)
+                    }
+                }
+                .decodeList<ExpenseData>()
+
+            val spent = expenses.sumOf { it.amount }
 
             val percentage = if (budget.monthly_budget > 0) {
                 (spent / budget.monthly_budget) * 100
