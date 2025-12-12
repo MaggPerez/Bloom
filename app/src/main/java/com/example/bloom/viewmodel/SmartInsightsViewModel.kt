@@ -6,9 +6,13 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bloom.controllers.BudgetController
-import com.example.bloom.controllers.TransactionController
+import com.example.bloom.controllers.IncomeController
+import com.example.bloom.controllers.ExpensesController
 import com.example.bloom.controllers.BloomAIController
-import com.example.bloom.datamodels.TransactionWithCategory
+import com.example.bloom.datamodels.IncomeData
+import com.example.bloom.datamodels.ExpenseData
+import com.example.bloom.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -18,8 +22,10 @@ import java.util.Locale
 class SmartInsightsViewModel : ViewModel() {
 
     private val budgetController = BudgetController()
-    private val transactionController = TransactionController()
+    private val incomeController = IncomeController()
+    private val expensesController = ExpensesController()
     private val aiController = BloomAIController()
+    private val supabase = SupabaseClient.client
 
     // =====================================================
     // STATE VARIABLES
@@ -36,8 +42,11 @@ class SmartInsightsViewModel : ViewModel() {
     var isLoadingAI by mutableStateOf(false)
         private set
 
-    // Transaction data for analysis
-    var transactions by mutableStateOf<List<TransactionWithCategory>>(emptyList())
+    // Income and Expense data for analysis
+    var incomeList by mutableStateOf<List<IncomeData>>(emptyList())
+        private set
+
+    var expensesList by mutableStateOf<List<ExpenseData>>(emptyList())
         private set
 
     var totalSpent by mutableStateOf(0.0)
@@ -111,33 +120,38 @@ class SmartInsightsViewModel : ViewModel() {
     }
 
     /**
-     * Load transaction data for analysis
+     * Load income and expense data for analysis
      */
     private suspend fun loadTransactionData() {
         val currentDate = LocalDate.now()
         val firstDayOfMonth = LocalDate.of(currentDate.year, currentDate.month, 1).toString()
         val lastDayOfMonth = currentDate.toString()
 
-        // Load current month transactions
-        transactionController.fetchTransactions(
-            page = 0,
-            pageSize = 500,
-            filter = com.example.bloom.datamodels.TransactionFilter(
-                startDate = firstDayOfMonth,
-                endDate = lastDayOfMonth
-            )
-        ).fold(
-            onSuccess = { txns ->
-                transactions = txns
-
-                // Calculate totals
-                totalSpent = txns.filter { it.transactionType == "expense" }.sumOf { it.amount }
-                totalIncome = txns.filter { it.transactionType == "income" }.sumOf { it.amount }
+        // Load current month income
+        incomeController.getIncomeByDateRange(firstDayOfMonth, lastDayOfMonth).fold(
+            onSuccess = { income ->
+                incomeList = income
+                totalIncome = income.sumOf { it.amount }
             },
             onFailure = { e ->
                 throw e
             }
         )
+
+        // Load current month expenses
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw Exception("User not authenticated")
+
+        try {
+            val allExpenses = expensesController.getExpenses(userId)
+            // Filter expenses by date range
+            expensesList = allExpenses.filter { expense ->
+                expense.due_date >= firstDayOfMonth && expense.due_date <= lastDayOfMonth
+            }
+            totalSpent = expensesList.sumOf { it.amount }
+        } catch (e: Exception) {
+            throw e
+        }
     }
 
     /**
@@ -184,15 +198,15 @@ class SmartInsightsViewModel : ViewModel() {
             generatedInsights.add(incomeVsExpense)
         }
 
-        // 6. Largest transaction
-        val largestTransaction = findLargestTransaction()
-        if (largestTransaction != null) {
+        // 6. Largest expense
+        val largestExpense = findLargestTransaction()
+        if (largestExpense != null) {
             generatedInsights.add(
                 Insight(
-                    title = "Largest Transaction",
-                    description = "Your biggest expense was $${String.format("%.2f", largestTransaction.amount)} in ${largestTransaction.categoryName}",
+                    title = "Largest Expense",
+                    description = "Your biggest expense was $${String.format("%.2f", largestExpense.amount)} for ${largestExpense.name}",
                     type = InsightType.WARNING,
-                    value = "$${String.format("%.2f", largestTransaction.amount)}"
+                    value = "$${String.format("%.2f", largestExpense.amount)}"
                 )
             )
         }
@@ -207,15 +221,14 @@ class SmartInsightsViewModel : ViewModel() {
     }
 
     /**
-     * Find top spending category
+     * Find top spending category/expense name
      */
     private fun findTopSpendingCategory(): Pair<String, Double>? {
-        val expenseTransactions = transactions.filter { it.transactionType == "expense" && it.categoryName != null }
-        if (expenseTransactions.isEmpty()) return null
+        if (expensesList.isEmpty()) return null
 
-        val categorySpending = expenseTransactions
-            .groupBy { it.categoryName!! }
-            .mapValues { it.value.sumOf { txn -> txn.amount } }
+        val categorySpending = expensesList
+            .groupBy { it.name }
+            .mapValues { it.value.sumOf { expense -> expense.amount } }
 
         return categorySpending.maxByOrNull { it.value }?.let { Pair(it.key, it.value) }
     }
@@ -224,55 +237,22 @@ class SmartInsightsViewModel : ViewModel() {
      * Analyze spending trend compared to previous months
      */
     private fun analyzeSpendingTrend(): Insight? {
-        viewModelScope.launch {
-            transactionController.getAverageMonthlyExpenses().fold(
-                onSuccess = { avgExpense ->
-                    if (avgExpense > 0 && totalSpent > 0) {
-                        val change = ((totalSpent - avgExpense) / avgExpense) * 100
-
-                        val insight = if (change > 10) {
-                            Insight(
-                                title = "Spending Increased",
-                                description = "You're spending ${String.format("%.1f", change)}% more than your 3-month average",
-                                type = InsightType.WARNING,
-                                change = change
-                            )
-                        } else if (change < -10) {
-                            Insight(
-                                title = "Great Job!",
-                                description = "You're spending ${String.format("%.1f", kotlin.math.abs(change))}% less than your 3-month average",
-                                type = InsightType.POSITIVE,
-                                change = change
-                            )
-                        } else {
-                            Insight(
-                                title = "Consistent Spending",
-                                description = "Your spending this month is similar to your 3-month average",
-                                type = InsightType.SPENDING_TREND
-                            )
-                        }
-
-                        insights = insights + insight
-                    }
-                },
-                onFailure = {}
-            )
-        }
-
-        return null // Will be added async
+        // TODO: Calculate average from historical expense data
+        // For now, skip this insight as ExpensesController doesn't have getAverageMonthlyExpenses
+        // This can be implemented by fetching expenses from previous months and calculating average
+        return null
     }
 
     /**
      * Analyze day of week spending patterns
      */
     private fun analyzeDayOfWeekPattern(): Insight? {
-        val expenseTransactions = transactions.filter { it.transactionType == "expense" }
-        if (expenseTransactions.isEmpty()) return null
+        if (expensesList.isEmpty()) return null
 
         try {
-            val daySpending = expenseTransactions
-                .groupBy { LocalDate.parse(it.transactionDate).dayOfWeek }
-                .mapValues { it.value.sumOf { txn -> txn.amount } }
+            val daySpending = expensesList
+                .groupBy { LocalDate.parse(it.due_date).dayOfWeek }
+                .mapValues { it.value.sumOf { expense -> expense.amount } }
 
             val topDay = daySpending.maxByOrNull { it.value }?.key
             if (topDay != null) {
@@ -369,37 +349,36 @@ class SmartInsightsViewModel : ViewModel() {
     }
 
     /**
-     * Find largest transaction
+     * Find largest expense
      */
-    private fun findLargestTransaction(): TransactionWithCategory? {
-        return transactions
-            .filter { it.transactionType == "expense" }
-            .maxByOrNull { it.amount }
+    private fun findLargestTransaction(): ExpenseData? {
+        return expensesList.maxByOrNull { it.amount }
     }
 
     /**
      * Analyze transaction frequency
      */
     private fun analyzeTransactionFrequency(): Insight? {
-        if (transactions.isEmpty()) return null
+        val totalTransactions = incomeList.size + expensesList.size
+        if (totalTransactions == 0) return null
 
         val currentDate = LocalDate.now()
         val daysInMonth = currentDate.dayOfMonth
-        val avgPerDay = transactions.size.toDouble() / daysInMonth
+        val avgPerDay = totalTransactions.toDouble() / daysInMonth
 
         return if (avgPerDay >= 3) {
             Insight(
-                title = "Active Spending",
-                description = "You're making ${String.format("%.1f", avgPerDay)} transactions per day on average",
+                title = "Active Tracking",
+                description = "You're recording ${String.format("%.1f", avgPerDay)} entries per day on average",
                 type = InsightType.SPENDING_TREND,
-                value = "${transactions.size} transactions"
+                value = "$totalTransactions entries"
             )
-        } else if (transactions.size <= 5) {
+        } else if (totalTransactions <= 5) {
             Insight(
                 title = "Light Activity",
-                description = "Only ${transactions.size} transactions this month. Consider tracking all expenses!",
+                description = "Only $totalTransactions entries this month. Consider tracking all income and expenses!",
                 type = InsightType.SAVINGS_TIP,
-                value = "${transactions.size} transactions"
+                value = "$totalTransactions entries"
             )
         } else {
             null
@@ -439,10 +418,16 @@ class SmartInsightsViewModel : ViewModel() {
      * Build transaction summary for AI analysis
      */
     private fun buildTransactionSummary(): String {
-        val categoryBreakdown = transactions
-            .filter { it.transactionType == "expense" }
-            .groupBy { it.categoryName }
-            .mapValues { it.value.sumOf { txn -> txn.amount } }
+        val expenseBreakdown = expensesList
+            .groupBy { it.name }
+            .mapValues { it.value.sumOf { expense -> expense.amount } }
+            .toList()
+            .sortedByDescending { it.second }
+            .take(5)
+
+        val incomeBreakdown = incomeList
+            .groupBy { it.source }
+            .mapValues { it.value.sumOf { income -> income.amount } }
             .toList()
             .sortedByDescending { it.second }
             .take(5)
@@ -452,11 +437,23 @@ class SmartInsightsViewModel : ViewModel() {
             appendLine("Total Income: $${String.format("%.2f", totalIncome)}")
             appendLine("Total Expenses: $${String.format("%.2f", totalSpent)}")
             appendLine("Net Savings: $${String.format("%.2f", totalIncome - totalSpent)}")
-            appendLine("\nTop 5 Spending Categories:")
-            categoryBreakdown.forEach { (category, amount) ->
-                val percentage = (amount / totalSpent * 100).toInt()
-                appendLine("- $category: $${"%.2f".format(amount)} ($percentage%)")
+
+            if (incomeBreakdown.isNotEmpty()) {
+                appendLine("\nTop Income Sources:")
+                incomeBreakdown.forEach { (source, amount) ->
+                    val percentage = if (totalIncome > 0) (amount / totalIncome * 100).toInt() else 0
+                    appendLine("- $source: $${"%.2f".format(amount)} ($percentage%)")
+                }
             }
+
+            if (expenseBreakdown.isNotEmpty()) {
+                appendLine("\nTop 5 Expenses:")
+                expenseBreakdown.forEach { (name, amount) ->
+                    val percentage = if (totalSpent > 0) (amount / totalSpent * 100).toInt() else 0
+                    appendLine("- $name: $${"%.2f".format(amount)} ($percentage%)")
+                }
+            }
+
             appendLine("\nProvide 3-4 personalized financial insights and actionable recommendations.")
         }
     }
