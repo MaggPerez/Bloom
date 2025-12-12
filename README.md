@@ -1,4 +1,6 @@
-# Bloom - Personal Finance Management Application
+# Bloom - A.I Budgeting App
+<img width="5000" height="3072" alt="Bloom Thumbnail" src="https://github.com/user-attachments/assets/10587785-7a24-4583-9663-b59af742dcf3" />
+
 
 ## Table of Contents
 - [Project Overview](#project-overview)
